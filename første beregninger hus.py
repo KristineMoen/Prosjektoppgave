@@ -37,5 +37,5 @@ betale_kr(5,6)
 #importere data
 import pandas as pd
 
-data = pd.read_excel(r'C:\Users\kristinemoen\Desktop\Til koding Exp_56.xlsx') #fikse opp i denne Kristine
+data = pd.read_excel(r'C:\Users\kristinemoen\Skrivebord\Exp_56.xlsx') #fikse opp i denne Kristine
 print(data)
