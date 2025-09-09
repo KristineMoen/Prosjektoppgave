@@ -1,4 +1,4 @@
-
+2
 #her skal vi prøve å beregne et hus
 #vi velger oss et random hus som testobjekt
 
@@ -37,5 +37,5 @@ betale_kr(5,6)
 #importere data
 import pandas as pd
 
-data = pd.read_excel(r'C:\Users\lfasanello\Desktop\sales.xlsx') #fikse opp i denne Kristine
+data = pd.read_excel(r'C:\Users\kristinemoen\Desktop\Til koding Exp_56.xlsx') #fikse opp i denne Kristine
 print(data)
