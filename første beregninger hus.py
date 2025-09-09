@@ -31,3 +31,11 @@ betale_kr(5,6)
 
 #ELLER bare ta for løkke og lagre alle spotpriser som går over grensen,
 # og regne på disse og skrive ut, og derfra gange med forbruk? for å så se kor mye de får i støtte
+
+
+
+#importere data
+import pandas as pd
+
+data = pd.read_excel(r'C:\Users\lfasanello\Desktop\sales.xlsx') #fikse opp i denne Kristine
+print(data)
