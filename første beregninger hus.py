@@ -10,8 +10,24 @@ print(data)
 #her skal vi prøve å beregne et hus (rekkehus i første omgang, i Oslo)
 #vi velger oss et random hus som testobjekt
 
+#UTEN Norgepris:
+
 data["Cost per Hour"] = data["Demand_kWh"] * data["Price/kWh"]
 print(data)
+
+# MED Norgespris:
+
+total_cost_Norgespris = 0
+for i in range(len(data["Demand_kWh"])):
+    total_cost_Norgespris += (i * 40)
+
+print("Total cost med Norgespris:", total_cost_Norgespris, "øre i NOK, og i kroner blir det:", total_cost_Norgespris // 100 )
+
+
+total_cost = 0
+for i in range(len(data["Cost per Hour"])):
+    total_cost += i
+print("Total cost:", total_cost, "øre i NOK. Uten noen form for strømstøtte eller Norgespris. Og i kroner blir der:", total_cost // 100)
 
 #Stoltediagram
 antall_dager = len(data) // 24
@@ -22,12 +38,13 @@ data["X_label"] = [f"d{i}, {t}" for i, t in zip(data["Dag"], data["Time"])]
 
 plt.figure(figsize=(16, 6))
 plt.bar(data["X_label"], data["Cost per Hour"], color ="blue")
-plt.axhline(y=50, color ="red", linestyle = "-", label = "Norgespris")
+plt.axhline(y=40, color ="red", linestyle = "-", label = "Norgespris")
 plt.xticks(rotation=90)
 plt.title("Forbruk time for time", fontsize=14)
 plt.xlabel("Time", fontsize=12)
 plt.ylabel("Kostnad i Øre (NOK)", fontsize=12)
 plt.show()
+
 
 
 
