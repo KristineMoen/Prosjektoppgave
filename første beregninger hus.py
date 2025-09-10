@@ -14,27 +14,21 @@ data["Cost per Hour"] = data["Demand_kWh"] * data["Price/kWh"]
 print(data)
 
 #Stoltediagram
+antall_dager = len(data) // 24
+data["Time"] = [i % 24 + 1 for i in range(len(data))]
+data["Dag"] = [i // 24 + 1 for i in range(len(data))]
 
-plt.figure(figsize=(12, 6))
-plt.bar(data.index + 1, data["Cost per Hour"], color ="blue")
+data["X_label"] = [f"d{i}, {t}" for i, t in zip(data["Dag"], data["Time"])]
+
+plt.figure(figsize=(16, 6))
+plt.bar(data["X_label"], data["Cost per Hour"], color ="blue")
+plt.axhline(y=50, color ="red", linestyle = "-", label = "Norgespris")
+plt.xticks(rotation=90)
 plt.title("Forbruk time for time", fontsize=14)
 plt.xlabel("Time", fontsize=12)
-plt.ylabel("Kostnad (NOK)", fontsize=12)
+plt.ylabel("Kostnad i Øre (NOK)", fontsize=12)
 plt.show()
 
-#annen måte å lage stolpediagrammet på
-#dager = len(data)//24
-#fig, axes = plt.subplots(dager, 1, figsize =(14, 4*dager), sharex = True)
-#for i in range(dager):
-    #plt.figure()
-    #dag_data = data.iloc[i*24:(i+1)*24]
-    #axes[i].bar(range(1,25), dag_data["Cost per Hour"], color = "blue")
-    #axes[i].set_title(f"Dag {i+1}")
-    #axes[i].set_xlabel("Timer")
-    #axes[i].set_ylabel("Kostander i NOK")
-
-
-#plt. show()
 
 
 
