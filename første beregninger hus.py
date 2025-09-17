@@ -27,7 +27,7 @@ print("Total cost med Norgespris:", total_cost_Norgespris, "øre i NOK, og i kro
 total_cost = 0
 for i in range(len(data["Cost per Hour"])):
     total_cost += i
-print("Total cost:", total_cost, "øre i NOK. Uten noen form for strømstøtte eller Norgespris. Og i kroner blir der:", total_cost // 100)
+print("Total cost:", total_cost, "i NOK. Uten noen form for strømstøtte eller Norgespris. Og i kroner blir der:", total_cost // 100)
 
 #Stoltediagram
 antall_dager = len(data) // 24
