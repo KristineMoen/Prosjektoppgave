@@ -1,9 +1,12 @@
 #importere data
+from logging.config import listen
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 
+######################### LESE FILER ############################################
 
 data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
 #print(data_demand)
@@ -13,8 +16,28 @@ data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 #print(data_price)
 
 
+######################## FINNE AKTUELLE HUSSTANDER ##############################
+
 #Finne ID:
-def finne_hus()
+data_answer = pd.read_csv('answers.csv')
+liste_hustander = []
+
+def finne_hustander():
+    for index, rad in data_answer.iterrows():
+        if (
+                rad["Q_City"] == 6 and  # 4 = Oslo
+                rad["Q22"] == 1 and  # 1 = enebolig
+                rad["Q23"] == 9 and  # 9 = 200kvm eller større
+                rad["Q21"] == 6  # 5 = 1 - 1.5 mill        6 = 1.5 mill eller mer
+        ):
+            liste_hustander.append(int(rad["ID"]))  # Legger til de ulike ID-ene
+    print("ID-er som oppfyller kravene:", liste_hustander)
+
+finne_hustander()
+
+
+################################### ULIKE HUSSTANDER UT I FRA ID #################################
+
 
 #ID 18 er en husholdning som bor i leilighet (80-99 kvm). De er pensjonister, har høyere utdanning og tjener 300-500k
 # i NO1 (OSLO), velger å hente ut data fra ID 18 og NO1: Disse hadde fastpris
@@ -40,12 +63,19 @@ def finne_hus()
 
 #data_price_NO1 = data_price_update[data_price['Price_area']=='NO1']
 
-#ID  er en husholdning som bor i enebolig (160-199 kvm). De jobber og har høyere utdanning + tjener 1-1.5 mil brutto
+#ID  er en husholdning som bor i enebolig (200kvm eller større). De jobber og har høyere utdanning + tjener 1-1.5 mil brutto
 # bor også i Oslo: Disse har spotpris
 
-data_demand_ID = data_demand[data_demand['ID']==67]
+data_demand_ID = data_demand[data_demand['ID']==115]
 
 data_price_NO1 = data_price_update[data_price['Price_area']=='NO1']
+
+
+
+
+
+
+############################## TIDSROMET VI HAR VALGT ########################################
 
 #Velger tidsrommet fra 2020-10-01 til 2021-09-30:
 start_dato = '2020-10-01'
@@ -67,6 +97,8 @@ merged_data['Price'] = merged_data['Demand_kWh'] * merged_data['Price_NOK_kWh']
 
 print(merged_data[['Date', 'Hour', 'Demand_kWh', 'Price_NOK_kWh', 'Price']])
 
+############### BEREGNINGER PÅ STRØM UTEN AVGIFT OG NETTLEIE MEN MED/UTEN NORGESPRIS ##############################
+
 #Total pris på strøm uten avgift og nettleie fra 2020-10-01 til 2021-09-30
 total_cost = 0
 for i in merged_data["Price"]:
@@ -83,17 +115,11 @@ diff = total_cost - total_cost_Norgespris
 print(diff, "Hvis positiv tjener de på Norgespris, uten avgift og nettleie")
 
 
-
-
-
+########################## PLOTTING AV STOLPEDIAGRAM ################################################
 
 #Stoltediagram:
 
-#antall_dager = len(merged_data) // 24
-#merged_data["Hour"] = [i % 24 + 1 for i in range(len(merged_data))]
-#merged_data["Date"] = [i // 24 + 1 for i in range(len(merged_data))]
 merged_data["X_label"] = [f"d{i}, {t}" for i, t in zip(merged_data["Date"], merged_data["Hour"])]
-
 
 
 plt.figure(figsize=(16, 6))
