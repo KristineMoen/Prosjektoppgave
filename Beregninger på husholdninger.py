@@ -26,7 +26,7 @@ liste_hustander = []
 def finne_hustander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] == 5 and     # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
+                rad["Q_City"] == 4 and     # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
                 rad["Q22"] == 1 and        # 1 = Enebolig 4 = Boligblokk
                 rad["Q23"] == 9 and        # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 rad["Q21"] == 6            # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
@@ -43,15 +43,8 @@ def finne_hustander():
 
     print("ID-er som oppfyller kravene:", liste_hustander)
 
-#hustander = []
-#def sjekke_hustander():
-    #for index, rad in data_housholds.iterrows():
-        #if rad['Demand_data'] == 'Yes':
-            #hustander.append(int(rad['ID']))
-    #print("ID-er som også har Yes på demand:", hustander)
-
 finne_hustander()
-#sjekke_hustander()
+
 
 ################################### ULIKE HUSSTANDER UT I FRA ID #################################
 
@@ -89,9 +82,6 @@ data_price_NO1 = data_price_update[data_price['Price_area']=='NO1']
 
 
 
-
-
-
 ############################## TIDSROMET VI HAR VALGT ########################################
 
 #Velger tidsrommet fra 2021-04-01 til 2022-03-31:
@@ -126,20 +116,16 @@ print("Total cost:", total_cost, "i NOK. Uten noen form for strømstøtte eller 
 total_cost_Norgespris = 0
 for i in merged_data["Demand_kWh"]:
     total_cost_Norgespris += i*0.4
-print("Total cost:", total_cost_Norgespris, "i NOK. Med Norgespris.")
+#print("Total cost:", total_cost_Norgespris, "i NOK. Med Norgespris.")
 
 diff = total_cost - total_cost_Norgespris
-print(diff, "Hvis positiv tjener de på Norgespris, uten avgift og nettleie")
+#print(diff, "Hvis positiv tjener de på Norgespris, uten avgift og nettleie")
 
 
 ########################## PLOTTING AV STOLPEDIAGRAM ################################################
 
-#Stoltediagram:
 
 #merged_data["X_label"] = [f"d{i}, {t}" for i, t in zip(merged_data["Date"], merged_data["Hour"])]
-
-
-
 
 #plt.figure(figsize=(16, 6))
 #plt.bar(merged_data["X_label"], merged_data["Price"], color ="blue")
@@ -152,7 +138,61 @@ print(diff, "Hvis positiv tjener de på Norgespris, uten avgift og nettleie")
 
 
 
+############################### PRINTE OVERSIKT OVER ULIKE HUSSTANDER ########################################
 
+
+def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, data_price):            #list inkluderer liste over ID
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
+
+    resultater = []
+
+
+    for ID in liste_hustander:
+        rad_info = data_answer[data_answer['ID'] == ID].iloc[0]
+        husholdning_type = rad_info['Q22']
+        størrelse = rad_info['Q23']
+        by = rad_info['Q_City']
+        inntekt = rad_info['Q21']
+
+        demand_ID = data_demand[data_demand['ID'] == ID]
+        price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
+        price_data = data_price[data_price['Price_area'] == price_area]
+
+        # Filtrer tidsrom
+        demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
+        price_data['Date'] = pd.to_datetime(price_data['Date'])
+
+        demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
+        price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+
+        # Merge og beregninger
+        merged = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
+        merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']
+
+        total_demand = merged['Demand_kWh'].sum()
+        total_price = merged['Price'].sum()
+        total_norgespris = total_demand * 0.4
+        diff = total_price - total_norgespris
+
+        resultater.append({
+            'ID': ID,
+            'Type_husholdning': husholdning_type,
+            'Størrelse': størrelse,
+            'By': by,
+            'Inntekt': inntekt,
+            'Total_demand_kWh': total_demand,
+            'Total_strømpris_NOK': total_price,
+            'Total_Norgespris_NOK': total_norgespris,
+            'Differanse_NOK': diff
+        })
+        pd.set_option("display.max_rows", None)
+        pd.set_option("display.max_columns", None)
+    return pd.DataFrame(resultater)
+
+
+
+print(sammenlikning_av_husholdninger(data_answer,data_households,data_demand,data_price))
 
 
 
