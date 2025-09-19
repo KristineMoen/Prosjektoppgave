@@ -26,10 +26,10 @@ liste_hustander = []
 def finne_hustander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] == 5 and  # 4 = Oslo
-                rad["Q22"] == 1 and  # 1 = enebolig
-                rad["Q23"] == 9 and  # 9 = 200kvm eller større
-                rad["Q21"] == 6      # 5 = 1 - 1.5 mill        6 = 1.5 mill eller mer
+                rad["Q_City"] == 5 and     # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
+                rad["Q22"] == 1 and        # 1 = Enebolig 4 = Boligblokk
+                rad["Q23"] == 9 and        # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
+                rad["Q21"] == 6            # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
