@@ -20,6 +20,7 @@ data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
 #Finne ID:
 data_answer = pd.read_csv('answers.csv')
+data_households = pd.read_csv('households (1).csv')
 liste_hustander = []
 
 def finne_hustander():
@@ -28,13 +29,29 @@ def finne_hustander():
                 rad["Q_City"] == 5 and  # 4 = Oslo
                 rad["Q22"] == 1 and  # 1 = enebolig
                 rad["Q23"] == 9 and  # 9 = 200kvm eller større
-                rad["Q21"] == 6  # 5 = 1 - 1.5 mill        6 = 1.5 mill eller mer
+                rad["Q21"] == 6      # 5 = 1 - 1.5 mill        6 = 1.5 mill eller mer
         ):
-            liste_hustander.append(int(rad["ID"]))  # Legger til de ulike ID-ene
+
+            # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
+            id_verdi = rad["ID"]
+            match = data_households[
+                (data_households["ID"] == id_verdi) &
+                (data_households["Demand_data"] == "Yes")
+                ]
+            if not match.empty:
+                liste_hustander.append(int(id_verdi))
+
     print("ID-er som oppfyller kravene:", liste_hustander)
 
-finne_hustander()
+#hustander = []
+#def sjekke_hustander():
+    #for index, rad in data_housholds.iterrows():
+        #if rad['Demand_data'] == 'Yes':
+            #hustander.append(int(rad['ID']))
+    #print("ID-er som også har Yes på demand:", hustander)
 
+finne_hustander()
+#sjekke_hustander()
 
 ################################### ULIKE HUSSTANDER UT I FRA ID #################################
 
