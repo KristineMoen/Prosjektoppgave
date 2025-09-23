@@ -26,7 +26,7 @@ liste_hustander = []
 def finne_hustander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] == 4 and     # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
+                rad["Q_City"] == 5 and     # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
                 rad["Q22"] == 1 and        # 1 = Enebolig 4 = Boligblokk
                 rad["Q23"] == 9 and        # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 rad["Q21"] == 6            # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
@@ -76,9 +76,9 @@ finne_hustander()
 #ID 512 er en husholdning som bor i enebolig (200kvm eller større). De jobber og har høyere utdanning + tjener 1-1.5 mil brutto
 # bor også i Oslo: Disse har spotpris
 
-data_demand_ID = data_demand[data_demand['ID']==512]
+data_demand_ID = data_demand[data_demand['ID']==314]
 
-data_price_NO1 = data_price_update[data_price['Price_area']=='NO1']
+data_price_NO1 = data_price_update[data_price['Price_area']=='NO5']
 
 
 
@@ -116,10 +116,10 @@ print("Total cost:", total_cost, "i NOK. Uten noen form for strømstøtte eller 
 total_cost_Norgespris = 0
 for i in merged_data["Demand_kWh"]:
     total_cost_Norgespris += i*0.4
-#print("Total cost:", total_cost_Norgespris, "i NOK. Med Norgespris.")
+print("Total cost:", total_cost_Norgespris, "i NOK. Med Norgespris.")
 
 diff = total_cost - total_cost_Norgespris
-#print(diff, "Hvis positiv tjener de på Norgespris, uten avgift og nettleie")
+print(diff, "Hvis positiv tjener de på Norgespris, uten avgift og nettleie")
 
 
 ########################## PLOTTING AV STOLPEDIAGRAM ################################################
@@ -160,7 +160,9 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         price_data = data_price[data_price['Price_area'] == price_area]
 
         # Filtrer tidsrom
+        demand_ID = demand_ID.copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
+        price_data = price_data.copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
 
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
@@ -188,6 +190,8 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         })
         pd.set_option("display.max_rows", None)
         pd.set_option("display.max_columns", None)
+        pd.set_option("display.width", 1000)
+        pd.set_option("display.float_format", "{:.2f}".format)
     return pd.DataFrame(resultater)
 
 
