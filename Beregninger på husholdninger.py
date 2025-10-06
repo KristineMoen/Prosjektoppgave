@@ -26,10 +26,12 @@ liste_hustander = []
 def finne_hustander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] == 5 and     # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
+                rad["Q_City"] == 4 and      # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
                 rad["Q22"] == 1 and        # 1 = Enebolig 4 = Boligblokk
                 rad["Q23"] == 9 and        # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
-                rad["Q21"] == 6            # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
+                rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
+                #rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
+                #rad["Q20"] == 5
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
@@ -154,6 +156,8 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         størrelse = rad_info['Q23']
         by = rad_info['Q_City']
         inntekt = rad_info['Q21']
+        utdanning = rad_info['Q20']
+        #oppvarming = rad['']
 
         demand_ID = data_demand[data_demand['ID'] == ID]
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
@@ -181,12 +185,14 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
             'ID': ID,
             'Type_husholdning': husholdning_type,
             'Størrelse': størrelse,
+            'Utdanning': utdanning,
             'By': by,
             'Inntekt': inntekt,
             'Total_demand_kWh': total_demand,
             'Total_strømpris_NOK': total_price,
             'Total_Norgespris_NOK': total_norgespris,
             'Differanse_NOK': diff
+            #'Type oppvarmin' : oppvarming
         })
         pd.set_option("display.max_rows", None)
         pd.set_option("display.max_columns", None)
@@ -197,6 +203,44 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
 
 
 print(sammenlikning_av_husholdninger(data_answer,data_households,data_demand,data_price))
+
+
+####################### REGNE PÅ PRISFØLSOMHET #########################
+
+import statsmodels.api as sm
+
+filtered_pf = merged_data[(merged_data['Demand_kWh'] > 0) & (merged_data['Price_NOK_kWh'] > 0)].copy()
+
+
+filtered_pf['log_demand'] = np.log(filtered_pf['Demand_kWh'])
+filtered_pf['log_price'] = np.log(filtered_pf['Price_NOK_kWh'])
+
+
+# Regresjonsanalyse: log(Demand) = alpha + beta * log(Price)
+X = sm.add_constant(filtered_pf['log_price'])  # Legg til konstantledd
+y = filtered_pf['log_demand']
+model = sm.OLS(y, X).fit()
+
+
+#print(model.summary())
+#beta = model.params['log_price']
+#print(f"Estimert prisfølsomhet (priselastisitet): {beta:.4f}")
+
+# Plot
+plt.figure(figsize=(10, 6))
+plt.scatter(filtered_pf['log_price'], filtered_pf['log_demand'], alpha=0.5, label='Observasjoner')
+plt.plot(filtered_pf['log_price'], model.predict(X), color='red', label='Regresjonslinje')
+plt.xlabel('log(Pris NOK/kWh)')
+plt.ylabel('log(Etterspørsel kWh)')
+plt.title('Prisfølsomhet for strømforbruk (log-log regresjon)')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+
+
 
 
 
