@@ -242,6 +242,64 @@ plt.show()
 
 
 
+def beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_price_update, data_households):
+    resultater = []
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
+
+    for ID in liste_hustander:
+        demand_ID = data_demand[data_demand['ID'] == ID]
+        price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
+        price_data = data_price_update[data_price_update['Price_area'] == price_area]
+
+        demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
+        price_data['Date'] = pd.to_datetime(price_data['Date'])
+
+        demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
+        price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+
+        merged = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
+
+        filtered = merged[(merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0)].copy()
+
+        if len(filtered) > 10:
+            filtered['log_demand'] = np.log(filtered['Demand_kWh'])
+            filtered['log_price'] = np.log(filtered['Price_NOK_kWh'])
+
+            X = sm.add_constant(filtered['log_price'])
+            y = filtered['log_demand']
+            model = sm.OLS(y, X).fit()
+
+            beta = model.params['log_price']
+        else:
+            beta = np.nan  # Ikke nok data
+
+        resultater.append({
+            'ID': ID,
+            'Prisfølsomhet (beta)': beta
+        })
+
+        # Plot
+        plt.figure(figsize=(10, 6))
+        plt.scatter(filtered['log_price'], filtered['log_demand'], alpha=0.5, label='Observasjoner')
+        plt.plot(filtered['log_price'], model.predict(X), color='red', label='Regresjonslinje')
+        plt.xlabel('log(Pris NOK/kWh)')
+        plt.ylabel('log(Etterspørsel kWh)')
+        plt.title('Prisfølsomhet for strømforbruk (log-log regresjon)')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+    return pd.DataFrame(resultater)
+
+resultat_df = beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_price_update, data_households)
+print(resultat_df)
+
+
+
+
+
 
 
 
