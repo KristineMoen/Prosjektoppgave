@@ -244,7 +244,7 @@ plt.show() '''
 
 
 
-def beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_price_update, data_households):
+'''def beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_price_update, data_households):
     resultater = []
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
@@ -266,17 +266,20 @@ def beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_p
         filtered = merged[(merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0)].copy()
 
         if len(filtered) > 10:
-            #filtered['log_demand'] = np.log(filtered['Demand_kWh'])
-            #filtered['log_price'] = np.log(filtered['Price_NOK_kWh'])
+            filtered['log_demand'] = np.log(filtered['Demand_kWh'])                  # Logartitmen av strømprisen
+            filtered['log_price'] = np.log(filtered['Price_NOK_kWh'])                # Logaritmen av strømforbruket
 
-            filtered.loc[:, 'log_demand'] = np.log(filtered['Demand_kWh'])
-            filtered.loc[:, 'log_price'] = np.log(filtered['Price_NOK_kWh'])
+            #filtered.loc[:, 'log_demand'] = np.log(filtered['Demand_kWh'])
+            #filtered.loc[:, 'log_price'] = np.log(filtered['Price_NOK_kWh'])
 
             # Regresjonsanalyse: log(Demand) = alpha + beta * log(Price)
-            X = sm.add_constant(filtered['log_price'])
-            y = filtered['log_demand']
-            model = sm.OLS(y, X).fit()
-            beta = model.params['log_price']
+            X = sm.add_constant(filtered['log_price'])             # Legger til en konstant
+            y = filtered['log_demand']                             # Setter opp responsvariabelen
+            model = sm.OLS(y, X).fit()                             # Kjører en lineær regresjonsanalyse, finner den beste linjen som passer dataene
+            beta = model.params['log_price']                       # Forteller om prisfølsomheten
+
+            print('For ID: ' + str(ID))
+            print(model.summary())
 
             # Plot
             plt.figure(figsize=(10, 6))
@@ -284,25 +287,32 @@ def beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_p
             plt.plot(filtered['log_price'], model.predict(X), color='red', label='Regresjonslinje')
             plt.xlabel('log(Pris NOK/kWh)')
             plt.ylabel('log(Etterspørsel kWh)')
-            plt.title('Prisfølsomhet for strømforbruk (log-log regresjon)')
+            plt.title('Prisfølsomhet for strømforbruk (log-log regresjon) for husholdningen med ID' + str(ID))
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
             plt.show()
+
         else:
             beta = np.nan  # Ikke nok data
 
         resultater.append({
             'ID': ID,
-            'Prisfølsomhet (beta)': beta
+            'Prisfølsomhet (beta)': beta,
+            'Regresjonslinjen': f"log(demand) = {model.params['const']: .2f} + {model.params['log_price']: .2f}*log(price NOK/kWh)"
         })
+
 
 
 
     return pd.DataFrame(resultater)
 
 resultat_df = beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_price_update, data_households)
-print(resultat_df)
+print(resultat_df)'''
+
+def prisføsomhet_husstander(liste_husstander):
+    return
+
 
 
 
