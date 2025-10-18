@@ -6,6 +6,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 
+import row
+
 ######################### LESE FILER ############################################
 
 data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
@@ -15,15 +17,17 @@ data_price = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 #print(data_price)
 
+Blindern_Temperatur = pd.read_csv('Blindern_Temperatur.csv')
+
 
 ######################## FINNE AKTUELLE HUSSTANDER ##############################
 
 #Finne ID:
 data_answer = pd.read_csv('answers.csv')
 data_households = pd.read_csv('households (1).csv')
-liste_hustander = []
+liste_husstander = []
 
-def finne_hustander():
+def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
                 rad["Q_City"] == 4 and      # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
@@ -41,11 +45,11 @@ def finne_hustander():
                 (data_households["Demand_data"] == "Yes")
                 ]
             if not match.empty:
-                liste_hustander.append(int(id_verdi))
+                liste_husstander.append(int(id_verdi))
 
-    print("ID-er som oppfyller kravene:", liste_hustander)
+    print("ID-er som oppfyller kravene:", liste_husstander)
 
-finne_hustander()
+finne_husstander()
 
 
 ################################### ULIKE HUSSTANDER UT I FRA ID #################################
@@ -150,7 +154,7 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
     resultater = []
 
 
-    for ID in liste_hustander:
+    for ID in liste_husstander:
         rad_info = data_answer[data_answer['ID'] == ID].iloc[0]
         husholdning_type = rad_info['Q22']
         størrelse = rad_info['Q23']
@@ -244,50 +248,119 @@ plt.show() '''
 
 
 
-'''def beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_price_update, data_households):
+def beregn_prisfølsomhet_for_husholdninger_per_dag(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur):    # log-log logaritme:
     resultater = []
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
 
-    for ID in liste_hustander:
-        demand_ID = data_demand[data_demand['ID'] == ID]
-        price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
-        price_data = data_price_update[data_price_update['Price_area'] == price_area]
+    avg_demand_per_day =[]
+    avg_price_per_day = []
+    alle_husholdninger = []
 
+    for ID in liste_husstander:
+        #gjennomsnits demand per dag:
+        demand_ID = data_demand[data_demand['ID'] == ID].copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
-        price_data['Date'] = pd.to_datetime(price_data['Date'])
-
-
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
+
+        avg_demand_per_day = demand_filtered.groupby('Date')['Demand_kWh'].sum().reset_index()
+        avg_demand_per_day['Avg demand kWh per day'] = avg_demand_per_day['Demand_kWh']/24
+
+        avg_demand_per_day['ID'] = ID
+        #avg_demand_per_day.append(avg_demand_per_day)
+
+        #gjennomsnitss pris per dag:
+        price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
+        price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
+        price_data['Date'] = pd.to_datetime(price_data['Date'])
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
 
-        merged = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
+        avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
+        avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh']/24
 
-        filtered = merged[(merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0)].copy()
+        #Temperatur:
+        Blindern_Temperatur['Date'] = pd.to_datetime(Blindern_Temperatur['Date'])
+
+        #Merge datasettene til et stort et:
+        merged_1 = pd.merge(avg_demand_per_day, avg_price_per_day, on = 'Date')
+        merged_1['ID'] = ID
+        merged = pd.merge(merged_1, Blindern_Temperatur, on = 'Date')
+        #alle_husholdninger.append(merged)
+        #alle_husholdninger_df = pd.concat(alle_husholdninger, ignore_index = True)
+
+
+        filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0) & (merged['Temperatur'].notnull())].copy()
 
         if len(filtered) > 10:
-            filtered['log_demand'] = np.log(filtered['Demand_kWh'])                  # Logartitmen av strømprisen
-            filtered['log_price'] = np.log(filtered['Price_NOK_kWh'])                # Logaritmen av strømforbruket
+            filtered['log_demand'] = np.log(filtered['Avg demand kWh per day'])                  # Logartitmen av strømprisen
+            filtered['log_price'] = np.log(filtered['Avg price NOK kWh per day'])                # Logaritmen av strømforbruket
+            filtered['T'] = filtered['Temperatur']
+            filtered['T2'] =  filtered['T'] ** 2
+            filtered['T3'] =  filtered['T'] ** 3
 
-            #filtered.loc[:, 'log_demand'] = np.log(filtered['Demand_kWh'])
-            #filtered.loc[:, 'log_price'] = np.log(filtered['Price_NOK_kWh'])
 
-            # Regresjonsanalyse: log(Demand) = alpha + beta * log(Price)
-            X = sm.add_constant(filtered['log_price'])             # Legger til en konstant
+
+            # Regresjonsanalyse: log(Demand) = beta_0 + beta_1 * log(Price) + beta_2 * T_i + beta_3 *T_i^2 + beta_4 *T_i^3 + error
+            X = filtered[['log_price', 'T', 'T2', 'T3']]
+            X = sm.add_constant(X)             # Legger til en konstant
             y = filtered['log_demand']                             # Setter opp responsvariabelen
-            model = sm.OLS(y, X).fit()                             # Kjører en lineær regresjonsanalyse, finner den beste linjen som passer dataene
-            beta = model.params['log_price']                       # Forteller om prisfølsomheten
+            model = sm.OLS(y, X).fit()                        # Kjører en lineær regresjonsanalyse, finner den beste linjen som passer dataene
+            beta_log_log = model.params['log_price']                       # Forteller om prisfølsomheten
+
+            regresjonslinje_log_log = f"log(demand) = {model.params['const']: .2f} + {model.params['log_price']: .2f} *log(price NOK/kWh) + {model.params['T']: .2f} + {model.params['T2']: .2f} + {model.params['T3']: .2f}"
 
             print('For ID: ' + str(ID))
             print(model.summary())
 
+            T_mean = filtered['T'].sum()/len(filtered['T'])
+            T2_mean = T_mean * T_mean
+            T3_mean = T_mean * T_mean * T_mean
+
+            x_vals = np.linspace(filtered['log_price'].min(), filtered['log_price'].max(), 100)
+            X_plot = pd.DataFrame({
+                'const': 1,
+                'log_price': x_vals,
+                'T': T_mean,
+                'T2': T2_mean,
+                'T3': T3_mean
+            })
+            y_pred = model.predict(X_plot)
+
             # Plot
             plt.figure(figsize=(10, 6))
             plt.scatter(filtered['log_price'], filtered['log_demand'], alpha=0.5, label='Observasjoner')
-            plt.plot(filtered['log_price'], model.predict(X), color='red', label='Regresjonslinje')
-            plt.xlabel('log(Pris NOK/kWh)')
-            plt.ylabel('log(Etterspørsel kWh)')
-            plt.title('Prisfølsomhet for strømforbruk (log-log regresjon) for husholdningen med ID' + str(ID))
+            plt.plot(x_vals, y_pred, color='red', linewidth=2, label=f'Regresjonslinje (T={T_mean:.1f}°C)')
+            plt.xlabel('log(Price NOK/kWh)')
+            plt.ylabel('log(Demand in kWh)')
+            plt.title(f'Prisfølsomhet for strømforbruk (log-log regresjon) for husholdning ID {ID} per dag')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.show()
+
+
+
+            #natural logarithm:
+
+
+            #Regresjonsanalyse: log(demand) = beta_0 + beta_1 * T + error
+            X = sm.add_constant(filtered['T'])
+            y = filtered['log_demand']
+            model = sm.OLS(y,X).fit()
+            beta_natural = model.params['T']
+
+            regresjonslinje_natural = f"log(demand) = {model.params['const']: .2f} + {model.params['T']: .2f} *beta_1"
+            print('For ID: ' + str(ID))
+            print(model.summary())
+
+
+            #Plot:
+            plt.figure(figsize=(10,6))
+            plt.scatter(filtered['T'],filtered['log_demand'], alpha = 0.5, label = 'Observasjonspunkt')
+            plt.plot(filtered['T'], model.predict(X), color = 'red', label = 'Regresjonslinje')
+            plt.xlabel('Temperatur')
+            plt.ylabel('log(demand kWh)')
+            plt.title(f'Prisfølsomhet for strømforbruk (natural logarithm) for husholdning ID {ID} per dag')
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
@@ -296,22 +369,148 @@ plt.show() '''
         else:
             beta = np.nan  # Ikke nok data
 
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_rows', None)
         resultater.append({
             'ID': ID,
-            'Prisfølsomhet (beta)': beta,
-            'Regresjonslinjen': f"log(demand) = {model.params['const']: .2f} + {model.params['log_price']: .2f}*log(price NOK/kWh)"
+            'Prisfølsomhet (beta) for log log logarithm': beta_log_log,
+            'Regresjonsliste for log log logarithm': regresjonslinje_log_log,
+            'Prisfølsomhet (beta) for Naturallogarithm': beta_natural,
+            'Regresjonslinjen for Natural logarithm': regresjonslinje_natural
         })
-
-
 
 
     return pd.DataFrame(resultater)
 
-resultat_df = beregn_prisfølsomhet_for_husholdninger(liste_hustander, data_demand, data_price_update, data_households)
-print(resultat_df)'''
+resultater = beregn_prisfølsomhet_for_husholdninger_per_dag(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur)
+print(resultater)
 
-def prisføsomhet_husstander(liste_husstander):
-    return
+
+'''def avg_demand_per_day(liste_husstander, data_demand):        # Summerer opp demand for en og en ID per dag og legger det til i total_demand_list
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
+
+    total_demand_list = []
+
+    for ID in liste_husstander:
+
+        demand_ID = data_demand[data_demand['ID'] == ID].copy()
+        demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
+
+        demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
+
+        total_demand_per_dag = demand_filtered.groupby('Date')['Demand_kWh'].sum().reset_index()
+        total_demand_per_dag['Gjennomsnitt demand kWh per dag'] = total_demand_per_dag['Demand_kWh']/24
+
+        total_demand_per_dag['ID'] = ID
+        total_demand_list.append(total_demand_per_dag)
+
+
+    total_demand_list = pd.concat(total_demand_list, ignore_index= True)         #Lage en dataframe
+
+    total_demand_list = total_demand_list[['ID', 'Date', 'Demand_kWh', 'Gjennomsnitt demand kWh per dag']]
+
+
+    return total_demand_list
+#print(avg_demand_per_day(liste_hustander,data_demand))
+
+
+
+def temp_korrigering(liste_husstander, Blindern_Temperatur):
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
+
+    Blindern_Temperatur['Tid(norsk normaltid)'] = pd.to_datetime(Blindern_Temperatur['Tid(norsk normaltid)'])
+    Blindern_Temperatur_filtered = Blindern_Temperatur[(Blindern_Temperatur['Tid(norsk normaltid)'] >= start_dato) & (Blindern_Temperatur['Tid(norsk normaltid)'] <= end_dato)]
+
+    total_demand_list = avg_demand_per_day(liste_husstander, data_demand)
+
+    temp_ref = 17  #Setter referanse temperatur til 17 grader
+    HDD = 0       #Heating Degree Days, HDD
+
+    temp_korr_liste = []
+
+    for ID in liste_husstander:
+        for index, row in Blindern_Temperatur_filtered.iterrows():
+            HDD = max(0, temp_ref - row['Middeltemperatur (døgn)'])
+            temp_korr_liste.append(HDD)
+
+
+    temp_korr_df = pd.DataFrame({'Temperatur korrigering': temp_korr_liste})
+    total_demand_list_new = pd.concat([total_demand_list, temp_korr_df], axis = 1)  # Lage en dataframe
+    total_demand_list_new = total_demand_list_new[['ID', 'Date', 'Demand_kWh', 'Gjennomsnitt demand kWh per dag', 'Temperatur korrigering']]
+
+    return total_demand_list_new
+#print(temp_korrigering(liste_husstander, Blindern_Temperatur))
+
+
+#Videre arbeid: finne ut hva de ulike betaene står for, sette opp regresjonsnalaysen, plotte resultate
+
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+
+def regresjonsanalyse_temp(liste_husstander, data_demand):
+    total_demand_list_new = temp_korrigering(liste_husstander, Blindern_Temperatur)
+
+    resultater = []
+
+
+    for ID in liste_husstander:
+        #demand_ID = data_demand[data_demand['ID'] == ID]
+        #total_demand = total_demand_list_new[total_demand_list_new['ID'] == ID].iloc[0]['Gjennomsnitt demand kWh per dag']
+        #temp_korr = total_demand_list_new[total_demand_list_new['ID'] == ID].iloc[0]['Temperatur korrigering']
+
+        #x = total_demand_list_new[['Temperatur korrigering']]
+        #y = total_demand_list_new['Gjennomsnitt demand kWh per dag']
+
+        df_ID = total_demand_list_new[total_demand_list_new['ID'] == ID]
+
+        x = df_ID[['Temperatur korrigering']]
+        y = df_ID['Gjennomsnitt demand kWh per dag']
+
+        modell = LinearRegression()
+        modell.fit(x,y)
+
+
+
+        koeff = modell.coef_[0]
+        konstantledd = modell.intercept_
+        r2 = r2_score(y, modell.predict(x))
+
+        # Plot: Plotter demand og temperarur korrigeringen, hvordan forbruket endrer seg med temperaturen
+        plt.figure(figsize=(10, 6))
+        plt.scatter(x, y, alpha=0.5, label='Observasjoner')
+        plt.plot(x, modell.predict(x), color='red', label='Regresjonslinje')
+        plt.xlabel('Temperatur korrigert')
+        plt.ylabel('Demand kWh')
+        plt.title('Prisfølsomhet for strømforbruk korrigert for ute-temp' + str(ID))
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+
+        resultater.append({
+            'ID': ID,
+            'Koeffisinet': float(koeff),
+            'Konstantledd': float(konstantledd),
+            'r2_score': float(r2)
+
+        })
+
+
+    return pd.DataFrame(resultater)
+
+
+
+print(regresjonsanalyse_temp(liste_husstander, data_demand))'''
+
+
+
+
+
 
 
 
