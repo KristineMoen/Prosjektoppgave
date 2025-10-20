@@ -17,7 +17,7 @@ data_price = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 #print(data_price)
 
-Blindern_Temperatur = pd.read_csv('Blindern_Temperatur.csv')
+Blindern_Temperatur = pd.read_csv('Blindern_Temperatur_dag.csv')
 
 
 ######################## FINNE AKTUELLE HUSSTANDER ##############################
