@@ -176,26 +176,37 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
 
-        # Merge og beregninger
+        # Merge og beregninger:
         merged = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
-        merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']
+        merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']           #Regner ut hva strømmen hadde kostet uten strømstøtte
+
+        # Regner ut prisen på strømmen med dagens strømstøtte:
+        merged['Price_strømstøtte'] = np.where(merged['Price_NOK_kWh'] > 0.9375, merged['Demand_kWh'] * (merged['Price_NOK_kWh'] * 0.90), merged['Demand_kWh'] * merged['Price_NOK_kWh'])
+
 
         total_demand = merged['Demand_kWh'].sum()
         total_price = merged['Price'].sum()
-        total_norgespris = total_demand * 0.4
-        diff = total_price - total_norgespris
+        total_strømstøtte = merged['Price_strømstøtte'].sum()
+        total_norgespris = total_demand * 0.4                                     #Regner ut hva strømmen hadde kostet med Norgespris
+        diff_norgespris_og_ingen = total_price - total_norgespris
+        diff_norgespris_og_strømstøtte = total_strømstøtte - total_norgespris
+        diff_u_støtte_og_m_støtte = total_price - total_strømstøtte
+
 
         resultater.append({
             'ID': ID,
-            'Type_husholdning': husholdning_type,
-            'Størrelse': størrelse,
-            'Utdanning': utdanning,
-            'By': by,
-            'Inntekt': inntekt,
-            'Total_demand_kWh': total_demand,
-            'Total_strømpris_NOK': total_price,
-            'Total_Norgespris_NOK': total_norgespris,
-            'Differanse_NOK': diff
+            'Husholdning': husholdning_type,          #Type husholdning
+            'Størrelse': størrelse,                   #Sørrelsen på husholdningen
+            'Utdanning': utdanning,                   #Utdanningen til de som bor der
+            'By': by,                                 #Hvilken by er husstanden i
+            'Inntekt': inntekt,                       #Inntekten til husstanden
+            'Total demand (kWh)': total_demand,         #Total demand i kWh
+            'Tot pris u/ støtte (NOK)': total_price,        #Total strømpris uten noe støtte
+            'Tot pris m/ støtte (NOK)': total_strømstøtte,     #Total strømpris med støtte
+            'Tot pris m/ Norgespris (NOK)': total_norgespris,    #Total pris med Norgespris som strømstøtte
+            'Diff i NOK mellom Norgespris og ingen strømstøtte': diff_norgespris_og_ingen,         #Differansne mellom pris uten støtte og Norgespris
+            'Diff i NOK mellom u/ støtte og m/ støtte': diff_u_støtte_og_m_støtte,                 #Differansen i uten støtte og med støtte
+            'Diff i NOK mellom Norgespris og strømstøtte' : diff_norgespris_og_strømstøtte         #Differansne i pris mellom norgespris og strømstøtte
             #'Type oppvarmin' : oppvarming
         })
         pd.set_option("display.max_rows", None)
