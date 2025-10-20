@@ -181,7 +181,9 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']           #Regner ut hva strømmen hadde kostet uten strømstøtte
 
         # Regner ut prisen på strømmen med dagens strømstøtte:
-        merged['Price_strømstøtte'] = np.where(merged['Price_NOK_kWh'] > 0.9375, merged['Demand_kWh'] * (merged['Price_NOK_kWh'] * 0.90), merged['Demand_kWh'] * merged['Price_NOK_kWh'])
+        merged['Price_strømstøtte'] = np.where(merged['Price_NOK_kWh'] > 0.75,
+                                               merged['Demand_kWh'] * (merged['Price_NOK_kWh'] * 0.90),
+                                               merged['Demand_kWh'] * merged['Price_NOK_kWh'])
 
 
         total_demand = merged['Demand_kWh'].sum()
