@@ -176,12 +176,11 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
 
-        # Merge og beregninger:
+        # Merge og beregninger
         merged = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
         merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']           #Regner ut hva strømmen hadde kostet uten strømstøtte
 
-        # Regner ut prisen på strømmen med dagens strømstøtte:
-        merged['Price_strømstøtte'] = np.where(merged['Price_NOK_kWh'] > 0.75,
+        merged['Price_strømstøtte'] = np.where(merged['Price_NOK_kWh'] > 0.75,                             #Regner ut prisen på strømmen med dagens strømstøtte:
                                                merged['Demand_kWh'] * (merged['Price_NOK_kWh'] * 0.90),
                                                merged['Demand_kWh'] * merged['Price_NOK_kWh'])
 
