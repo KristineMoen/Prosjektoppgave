@@ -228,6 +228,7 @@ print(sammenlikning_av_husholdninger(data_answer,data_households,data_demand,dat
 
 ####################### REGNE PÅ PRISFØLSOMHET #########################
 
+liste_husstander = [512, 642, 827]
 
 def beregn_prisfølsomhet_for_husholdninger_per_dag(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):    # log-log logaritme:
     resultater = []
@@ -440,43 +441,9 @@ def log_log_prisfølsomhet_dag(liste_husstander, data_demand, data_price_update,
             print('For ID: ' + str(ID))
             print(model.summary())
 
-            '''T_mean = filtered['T'].mean()
-            T2_mean = T_mean ** 2
-            T3_mean = T_mean ** 3
 
-            x_vals = np.linspace(filtered['log_price'].min(), filtered['log_price'].max(), 100)
-            X_plot = pd.DataFrame({
-                'const': 1,
-                'log_price': x_vals,
-                'T': T_mean,
-                'T2': T2_mean,
-                'T3': T3_mean
-            })
-            y_pred = model.predict(X_plot)
-
-            # Plot
-            plt.figure(figsize=(10, 6))
-            plt.scatter(filtered['log_price'], filtered['log_demand'], alpha=0.5, label='Observasjoner')
-            plt.plot(x_vals, y_pred, color='red', linewidth=2, label=f'Regresjonslinje')
-            plt.xlabel('log(Price NOK/kWh)')
-            plt.ylabel('log(Demand in kWh)')
-            plt.title(f'Prisfølsomhet for strømforbruk (log-log regresjon) for husholdning ID {ID} per dag')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            cursor = mplcursors.cursor(
-                plt.scatter(filtered['log_price'], filtered['log_demand'], alpha=0.5, label='Observasjoner'), hover=True)
-            datoer = filtered['Date'].dt.strftime('%Y-%m-%d').tolist()
-
-            @cursor.connect("add")
-            def on_add(sel):
-                sel.annotation.set_text(datoer[sel.index])
-
-            plt.show()
-            plt.show()
-
-            #Annet plot:
-            plt.figure(figsize=(10,6))
+            #Plot:
+            '''plt.figure(figsize=(10,6))
             plt.scatter(filtered['log_price'], filtered['log_demand'], alpha=0.5, label='Observasjoner')
             plt.plot(filtered['log_price'],model.predict(X), color = 'red', label= 'Regresjonsmodell')
             plt.xlabel('log(Price kWh/NOK)')
