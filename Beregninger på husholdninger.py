@@ -130,7 +130,6 @@ print("Total cost:", total_cost_Norgespris, "i NOK. Med Norgespris.")
 diff = total_cost - total_cost_Norgespris
 print(diff, "Hvis positiv tjener de på Norgespris, uten avgift og nettleie")'''
 
-
 ########################## PLOTTING AV STOLPEDIAGRAM ################################################
 
 
