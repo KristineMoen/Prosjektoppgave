@@ -228,7 +228,7 @@ print(sammenlikning_av_husholdninger(data_answer,data_households,data_demand,dat
 
 ####################### REGNE PÅ PRISFØLSOMHET #########################
 
-liste_husstander = [512, 642, 827]
+test_liste_husstander = [512, 642, 827]
 
 def beregn_prisfølsomhet_for_husholdninger_per_dag(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):    # log-log logaritme:
     resultater = []
@@ -380,7 +380,7 @@ def beregn_prisfølsomhet_for_husholdninger_per_dag(liste_husstander, data_deman
 
     return pd.DataFrame(resultater)       #IKKE
 
-def log_log_prisfølsomhet_dag(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
+def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
     resultater = []
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
@@ -389,7 +389,7 @@ def log_log_prisfølsomhet_dag(liste_husstander, data_demand, data_price_update,
     avg_price_per_day = []
     alle_husholdninger = []
 
-    for ID in liste_husstander:
+    for ID in test_liste_husstander:
         #gjennomsnits demand per dag:
         demand_ID = data_demand[data_demand['ID'] == ID].copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
