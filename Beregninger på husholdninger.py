@@ -667,7 +667,7 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
 
         # Temperatur:
-        Blindern_Temp_t4t['Hour'] = pd.to_datetime(Blindern_Temp_t4t['Hour'])
+        Blindern_Temp_t4t['Hour'] = pd.to_datetime(Blindern_Temp_t4t['Hour']).dt.hour
 
         # Merge datasettene til et stort:
         merged_1 = pd.merge(demand_filtered, price_filtered, on='Hour')
@@ -684,7 +684,7 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
             filtered['T3'] = filtered['T'] ** 3
             filtered['hour'] = filtered['Hour'].dt.hour
 
-            hour_dummies = pd.get_dummies(filtered['hour'], prefix = 'hour', drop_first = True)
+            hour_dummies = pd.get_dummies(filtered['hour'], prefix = 'hour')
 
             # Regresjonsanalyse: demand = beta_0 + beta_1 * pris + beta_2 *T + beta_3 *T^2 + beta_4 *T^3 + sum(alpha_h *time_h) + error
             X_natural = pd.concat([filtered[['price', 'T', 'T2', 'T3']], hour_dummies], axis = 1)
