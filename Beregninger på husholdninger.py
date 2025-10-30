@@ -389,7 +389,7 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
     alle_husholdninger = []
 
     for ID in test_liste_husstander:
-        #gjennomsnits demand per dag:
+        #Gjennomsnits demand per dag:
         demand_ID = data_demand[data_demand['ID'] == ID].copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
@@ -398,9 +398,8 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
         avg_demand_per_day['Avg demand kWh per day'] = avg_demand_per_day['Demand_kWh']/24
 
         avg_demand_per_day['ID'] = ID
-        #avg_demand_per_day.append(avg_demand_per_day)
 
-        #gjennomsnitss pris per dag:
+        #Gjennomsnitss pris per dag:
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
@@ -424,18 +423,18 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
             filtered['log_demand'] = np.log(filtered['Avg demand kWh per day'])                  # Logartitmen av strømprisen
             filtered['log_price'] = np.log(filtered['Avg price NOK kWh per day'])                # Logaritmen av strømforbruket
             filtered['T'] = filtered['Temperatur']
-            filtered['T2'] =  filtered['T'] ** 2
-            filtered['T3'] =  filtered['T'] ** 3
+            filtered['T2'] = filtered['T'] ** 2
+            filtered['T3'] = filtered['T'] ** 3
 
 
-            # Regresjonsanalyse: log(Demand) = beta_0 + beta_1 * log(Price) + beta_2 * T_i + beta_3 *T_i^2 + beta_4 *T_i^3 + error
+            # Regresjonsanalyse: log(Demand) = beta_0 + beta_1 * log(Price) + beta_2 * T + beta_3 *T^2 + beta_4 *T^3 + error
             X = filtered[['log_price', 'T', 'T2', 'T3']]
-            X = sm.add_constant(X)             # Legger til en konstant
+            X_1 = sm.add_constant(X)             # Legger til en konstant
             y = filtered['log_demand']                             # Setter opp responsvariabelen
-            model = sm.OLS(y, X).fit()                        # Kjører en lineær regresjonsanalyse, finner den beste linjen som passer dataene
+            model = sm.OLS(y, X_1).fit()                        # Kjører en lineær regresjonsanalyse, finner den beste linjen som passer dataene
             beta_log_log = model.params['log_price']                       # Forteller om prisfølsomheten
 
-            regresjonslinje_log_log = f"log(demand) = {model.params['const']: .2f} + {model.params['log_price']: .2f} *log(price NOK/kWh) + {model.params['T']: .2f} *T + {model.params['T2']: .2f} *T^2 + {model.params['T3']: .2f} *T^3"
+            regresjonslinje_log_log = f"log(demand) = {model.params['const']: .2f} + {model.params['log_price']: .2f} *log(price NOK/kWh) + {model.params['T']: .2f} *T + {model.params['T2']: .4f} *T^2 + {model.params['T3']: .4f} *T^3"
 
             print('For ID: ' + str(ID))
             print(model.summary())
@@ -456,11 +455,11 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
 
 def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
     resultater = []
-    start_dato = '2021-12-01'
-    end_dato = '2021-12-31'
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
 
     for ID in test_liste_husstander:
-        # gjennomsnits demand per dag:
+        #Gjennomsnits demand per dag:
         demand_ID = data_demand[data_demand['ID'] == ID].copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
@@ -470,7 +469,7 @@ def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_pric
 
         avg_demand_per_day['ID'] = ID
 
-        # gjennomsnitss pris per dag:
+        #Gjennomsnitss pris per dag:
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
@@ -479,10 +478,10 @@ def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_pric
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
 
-        # Temperatur:
+        #Temperatur:
         Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
 
-        # Merge datasettene til et stort et:
+        #Merge datasettene til et stort et:
         merged_1 = pd.merge(avg_demand_per_day, avg_price_per_day, on='Date')
         merged_1['ID'] = ID
         merged = pd.merge(merged_1, Blindern_Temperatur_dag, on='Date')
@@ -493,7 +492,7 @@ def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_pric
             filtered['log_demand'] = np.log(filtered['Avg demand kWh per day'])  # Logartitmen av strømprisen
             filtered['T'] = filtered['Temperatur']
 
-            # Regresjonsanalyse: log(demand) = beta_0 + beta_1 * T + error
+            #Regresjonsanalyse: log(demand) = beta_0 + beta_1 * T + error
             X_natural = sm.add_constant(filtered['T'])
             y_natural = filtered['log_demand']
             model_natural = sm.OLS(y_natural, X_natural).fit()
@@ -627,7 +626,7 @@ def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_pri
     end_dato = '2021-12-31'
 
     for ID in test_liste_husstander:
-        # gjennomsnits demand per dag:
+        #Gjennomsnits demand per dag:
         demand_ID = data_demand[data_demand['ID'] == ID].copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
@@ -637,7 +636,7 @@ def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_pri
 
         avg_demand_per_day['ID'] = ID
 
-        # gjennomsnitss pris per dag:
+        #Gjennomsnitss pris per dag:
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
@@ -646,13 +645,13 @@ def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_pri
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
 
-        # Merge datasettene til et stort et:
+        #Merge datasettene til et stort et:
         merged = pd.merge(avg_demand_per_day, avg_price_per_day, on='Date')
 
         filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0)].copy()
 
         if len(filtered) > 0:
-            # demand = beta_0 + beta_1 * log(price)
+            #Demand = beta_0 + beta_1 * log(price)
             filtered['log_price'] = np.log(filtered['Avg price NOK kWh per day'])  # Logartitmen av strømprisen
             filtered['demand'] = filtered['Avg demand kWh per day']
 
@@ -706,7 +705,7 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
     end_dato = '2021-12-31'
 
     for ID in test_liste_husstander:
-        # gjennomsnits demand per dag:
+        #Gjennomsnits demand per dag:
         demand_ID = data_demand[data_demand['ID'] == ID].copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
@@ -716,7 +715,7 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
 
         avg_demand_per_day['ID'] = ID
 
-        # gjennomsnitss pris per dag:
+        #Gjennomsnitss pris per dag:
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
@@ -725,7 +724,7 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
 
-        # Merge datasettene til et stort et:
+        #Merge datasettene til et stort et:
         merged = pd.merge(avg_demand_per_day, avg_price_per_day, on='Date')
 
         filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0)].copy()
@@ -780,13 +779,13 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
 
     return pd.DataFrame(resultater)
 
-def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households):
+def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag):
     resultater = []
     start_dato = '2021-12-01'
     end_dato = '2021-12-31'
 
     for ID in test_liste_husstander:
-        # gjennomsnits demand per dag:
+        #Gjennomsnits demand per dag:
         demand_ID = data_demand[data_demand['ID'] == ID].copy()
         demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
@@ -796,7 +795,7 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
 
         avg_demand_per_day['ID'] = ID
 
-        # gjennomsnitss pris per dag:
+        #Gjennomsnitss pris per dag:
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
@@ -805,26 +804,35 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
 
+        # Temperatur:
+        Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+
         # Merge datasettene til et stort et:
-        merged = pd.merge(avg_demand_per_day, avg_price_per_day, on='Date')
+        merged_1 = pd.merge(avg_demand_per_day, avg_price_per_day, on='Date')
+        merged_1['ID'] = ID
+        merged = pd.merge(merged_1, Blindern_Temperatur_dag, on='Date')
 
         filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0)].copy()
 
         if len(filtered) > 0:
-            #Regresjonslinje: Demand = beta_0 + beta_1 * pris
+            #Regresjonslinje: Demand = beta_0 + beta_1 * pris + beta_2 * T + beta_3 *T^2 + beta_4 *T^3
             filtered['price'] = filtered['Avg price NOK kWh per day']  # Logartitmen av strømprisen
             filtered['demand'] = np.log(filtered['Avg demand kWh per day'])
+            filtered['T'] = filtered['Temperatur']
+            filtered['T2'] = filtered['T'] ** 2
+            filtered['T3'] = filtered['T'] ** 3
 
-            X_natural = sm.add_constant(filtered['price'])
+            X_natural = filtered[['price', 'T', 'T2', 'T3']]
+            X_natural = sm.add_constant(X_natural)
             y_natural = filtered['demand']
             model_natural = sm.OLS(y_natural, X_natural).fit()
             beta_natural = model_natural.params['price']
 
-            regresjonslinje_natural = f"demand = {model_natural.params['const']: .2f} + {model_natural.params['price']: .2f} *price"
+            regresjonslinje_natural = f"demand = {model_natural.params['const']: .2f} + {model_natural.params['price']: .2f} *price + {model_natural.params['T']: .4f} *T + {model_natural.params['T2']: .4f} *T^2 + {model_natural.params['T3']: .4f} *T^3"
             print('For ID: ' + str(ID))
             print(model_natural.summary())
 
-            # Plot:
+            '''# Plot:
             plt.figure(figsize=(10, 6))
             plt.scatter(filtered['price'], filtered['demand'], alpha=0.5, label='Observasjonspunkt')
             plt.plot(filtered['price'], model_natural.predict(X_natural), color='red', label='Regresjonslinje')
@@ -843,7 +851,7 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
             def on_add(sel):
                 sel.annotation.set_text(datoer[sel.index])
 
-            plt.show()
+            plt.show()'''
 
         else:
             beta_natural = np.nan
@@ -854,8 +862,8 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
         pd.set_option('display.max_rows', None)
         resultater.append({
             'ID': ID,
-            'Prisfølsomhet (beta) for Natural logarithm': beta_natural,
-            'Regresjonslinjen for "direkte"': regresjonslinje_natural
+            'Prisfølsomhet (beta) for lineær regresjonsanalyse': beta_natural,
+            'Regresjonslinjen for lineær': regresjonslinje_natural
         })
 
     return pd.DataFrame(resultater)
@@ -866,7 +874,7 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
 #resultater = natural_log_prisfølsomhet_time(liste_husstander,data_demand,data_price_update,data_households,Blindern_Temp_t4t)
 #resultater = lin_log_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households)
 #resultater = log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households)
-resultater = direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households)
+resultater = direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
 print(resultater)
 
 
