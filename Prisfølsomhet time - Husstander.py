@@ -49,7 +49,7 @@ finne_husstander()
 
 #--------------------------------- REGNE PÅ PRISFØLSOMHET PER TIME FOR TIME ------------------------------------------#
 
-test_liste_husstander = [512, 642] #Bare for test
+test_liste_husstander = [512] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
@@ -136,8 +136,105 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
 
     return pd.DataFrame(resultater)
 
+#-----------------------------------------------------------------------------------
+'''Regresjon for log-lin/ lin-log: 
+      1) log(demand) = beta_0 + beta_1 *T + beta_2 *T^2 + beta_3 *T^3 + beta_4 *pris + sum(alpha_h *time_h) + error
+      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 + sum(alpha_h *time_h) + error
+      3) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 + sum(alpha_h *time_h) + error
+'''
 
-resultater = direkte_prisfølsomhet_time(test_liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
+def log_lin_prisfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+    hourly_res = []
+    start_dato = '2021-12-01'
+    end_dato = '2021-12-02'
+
+    start_dato = pd.to_datetime(start_dato)
+    end_dato = pd.to_datetime(end_dato)
+
+    alle_timer = pd.date_range(start = start_dato, end = end_dato + pd.Timedelta(days = 1))
+
+    for ID in test_liste_husstander:
+        #Demand per time:
+        demand_ID = data_demand[data_demand['ID'] == ID].copy()
+        demand_ID['Date'] = pd.to_datetime(demand_ID['Date']).dt.floor('h')
+        demand_ID['Hour'] = demand_ID['Date'].dt.hour + 1
+        demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
+
+        demand_filtered.loc[:, 'Demand kWh per hour'] = demand_filtered['Demand_kWh']
+
+        #Pris per time:
+        price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
+        price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
+        price_data['Date'] = pd.to_datetime(price_data['Date']).dt.floor('h')
+        price_data['Hour'] = price_data['Date'].dt.hour + 1
+        price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+
+        price_filtered.loc[:, 'Price NOK kWh per hour'] = price_filtered['Price_NOK_kWh']
+
+        #Temperatur:
+        Blindern_Temp_t4t['Date'] = pd.to_datetime(Blindern_Temp_t4t['Date']).dt.floor('h')
+        Blindern_Temp_t4t['Hour'] = Blindern_Temp_t4t['Date'].dt.hour + 1
+        temp_filtered = Blindern_Temp_t4t[(Blindern_Temp_t4t['Date'] >= start_dato) & (Blindern_Temp_t4t['Date'] <= end_dato)]
+
+        temp_filtered.loc[:, 'Temperatur'] = temp_filtered['Temperatur']
+
+        #Merge datasettene til et stort et:
+        merged_1 = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
+        merged_1['ID'] = ID
+        merged = pd.merge(merged_1, temp_filtered, on=['Date', 'Hour'])
+
+        filtered = merged[(merged['Demand kWh per hour'] > 0) & (merged['Price NOK kWh per hour'] > 0) & (merged['Temperatur'].notnull())].copy()
+
+
+        if len(filtered) > 0:
+            filtered['log_demand'] = np.log(filtered['Demand kWh per hour'])  # Logartitmen av strømprisen
+            filtered['T'] = filtered['Temperatur']
+            filtered['T2'] = filtered['T'] ** 2
+            filtered['T3'] = filtered['T'] ** 3
+            filtered['price'] = filtered['Price NOK kWh per hour']
+            filtered['hour'] = filtered['Hour']
+
+            print("Unike timer i filtered:", filtered['Hour'].unique())
+            print("Antall rader i filtered:", len(filtered))
+
+            for slot in alle_timer:
+                hour = slot.hour + 1
+                subset = filtered[(filtered['Date'].dt.date == slot.date()) & (filtered['Hour'] == hour)]
+
+                if len(subset) > 0:
+                    X = subset[['T', 'T2', 'T3', 'price']]
+                    X = sm.add_constant(X)
+                    y = subset['log_demand']
+
+                    model = sm.OLS(y, X).fit()
+                    beta_1 = model.params['T']
+
+                    regresjonslinje = (f"log(demand) = {model.params['const']: .2f} + "
+                                           f"{model.params['T']: .2f} *T +"
+                                           f"{model.params['T2']} *T^2 +"
+                                           f"{model.params['T3']} *T^3 + "
+                                           f" {model.params['price']} *price")
+
+                    hourly_res.append({
+                        'Hour': hour,
+                        'beta_1': beta_1,
+                        'Regresjonslinje': regresjonslinje
+                    })
+
+                    print('For ID: ' + str(ID), 'Time:'  + str(hour))
+                    print(model.summary())
+
+            else:
+                print(f"For ID: {ID}, Hour: {hour} -> Ingen data")
+
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_rows', None)
+
+    return pd.DataFrame(hourly_res)
+
+#resultater = direkte_prisfølsomhet_time(test_liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
+resultater = log_lin_prisfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
 print(resultater)
 

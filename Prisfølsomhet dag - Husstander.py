@@ -49,7 +49,7 @@ finne_husstander()
 
 #--------------------------------- REGNE PÅ PRISFØLSOMHET PER DAG ------------------------------------------#
 
-test_liste_husstander = [512, 642, 827] #Bare for test
+test_liste_husstander = [512, 642] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
@@ -83,6 +83,7 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
 
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh']/24
+        print(avg_price_per_day)
 
         #Temperatur:
         Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
@@ -473,11 +474,11 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-##resultater = log_log_prisfølsomhet_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
+resultater = log_log_prisfølsomhet_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
 #resultater = log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
 #resultater = lin_log_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
 #resultater = log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
-resultater = direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
+#resultater = direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
 
 print(resultater)
 
