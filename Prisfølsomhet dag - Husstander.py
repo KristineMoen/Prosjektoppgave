@@ -198,25 +198,6 @@ def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_pric
             print('For ID: ' + str(ID))
             print(model_natural.summary())
 
-
-            # Plot:
-            '''plt.figure(figsize=(10, 6))
-            plt.scatter(filtered['T'], filtered['log_demand'], alpha=0.5, label='Observasjonspunkt')
-            plt.plot(filtered['T'], model_natural.predict(X_natural), color='red', label='Regresjonslinje')
-            plt.xlabel('Temperatur')
-            plt.ylabel('log(demand kWh)')
-            plt.title(f'Prisfølsomhet for strømforbruk (log-lin) for husholdning ID {ID} per dag')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            cursor = mplcursors.cursor(plt.scatter(filtered['T'], filtered['log_demand'], alpha=0.5, label='Observasjonspunkt'), hover = True)
-            datoer = filtered['Date'].dt.strftime('%Y-%m-%d').tolist()
-
-            @cursor.connect("add")
-            def on_add(sel):
-                sel.annotation.set_text(datoer[sel.index])
-            plt.show()'''
-
         else:
             beta_natural = np.nan
             regresjonslinje_natural = None
@@ -232,7 +213,7 @@ def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_pric
 
     return pd.DataFrame(resultater)
 
-def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_price_update, data_housholds, Blindern_Temperatur_dag):
+def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
     resultater = []
     start_dato = '2021-12-01'
     end_dato = '2021-12-31'
@@ -288,26 +269,6 @@ def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_pri
                                        f"{model_natural.params['T3']: .4f} *T^3")
             print('For ID: ' + str(ID))
             print(model_natural.summary())
-
-            # Plot:
-            '''plt.figure(figsize=(10, 6))
-            plt.scatter(filtered['log_price'], filtered['demand'], alpha=0.5, label='Observasjonspunkt')
-            plt.plot(filtered['log_price'], model_natural.predict(X_natural), color='red', label='Regresjonslinje')
-            plt.xlabel('log(price)')
-            plt.ylabel('demand kWh')
-            plt.title(f'Prisfølsomhet for strømforbruk (lin-log) for husholdning ID {ID} per dag')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            cursor = mplcursors.cursor(
-                plt.scatter(filtered['log_price'], filtered['demand'], alpha=0.5, label='Observasjonspunkt'), hover=True)
-            datoer = filtered['Date'].dt.strftime('%Y-%m-%d').tolist()
-
-            @cursor.connect("add")
-            def on_add(sel):
-                sel.annotation.set_text(datoer[sel.index])
-
-            plt.show()'''
 
         else:
             beta_natural = np.nan
