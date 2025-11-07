@@ -420,8 +420,8 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
 
 def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     resultater = []
-    start_dato = '2021-12-01'
-    end_dato = '2021-12-03'
+    start_dato = '2021-11-01'
+    end_dato = '2021-12-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -467,15 +467,25 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
 
         df = pd.DataFrame(filtered)
 
+        df['Date'] = pd.to_datetime(df['Date'])
+        df['Month'] = df['Date'].dt.month
+        df['Month'] = df['Date'].dt.strftime('%B')
+
+
         print(df)
 
+        df['Hour'] = df['Hour'].astype(str)
         df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
                                                             '11', '12', '13', '14', '15', '16', '17', '18', '19',
                                                             '20', '21', '22', '23', '24'], ordered=False)
 
+        df['Month'] = pd.Categorical(df['Month'], categories=['January', 'February', 'March', 'April', 'May', 'June',
+                                     'July', 'August', 'September', 'October', 'November', 'December'], ordered=True)
+
         y,X = patsy.dmatrices('np.log(Demand_kWh) ~ np.log(Price_NOK_kWh) + Temperatur24 + '
                               'Temperatur24**2 + Temperatur24**3 + Temperatur72 + '
-                              'C(Hour, Treatment(reference=1))', data = df, return_type = 'dataframe')
+                              'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "January"))',
+                              data = df, return_type = 'dataframe')
 
         model = sm.OLS(y, X).fit()
         print(model.summary())
