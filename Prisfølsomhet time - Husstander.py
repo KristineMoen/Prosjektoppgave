@@ -472,70 +472,26 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
         df['Month'] = df['Date'].dt.strftime('%B')
 
 
-        print(df)
+        #print(df)
+
+        #Kjører regresjonsanalysen:
 
         df['Hour'] = df['Hour'].astype(str)
         df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
                                                             '11', '12', '13', '14', '15', '16', '17', '18', '19',
-                                                            '20', '21', '22', '23', '24'], ordered=False)
+                                                            '20', '21', '22', '23', '24'], ordered=True)
 
         df['Month'] = pd.Categorical(df['Month'], categories=['January', 'February', 'March', 'April', 'May', 'June',
                                      'July', 'August', 'September', 'October', 'November', 'December'], ordered=True)
 
         y,X = patsy.dmatrices('np.log(Demand_kWh) ~ np.log(Price_NOK_kWh) + Temperatur24 + '
                               'Temperatur24**2 + Temperatur24**3 + Temperatur72 + '
-                              'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "January"))',
-                              data = df, return_type = 'dataframe')
+                              'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "January")) +'
+                              'C(Hour, Treatment(reference="1")) * C(Month, Treatment(reference = "January"))',
+                              data = df, return_type = 'dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
         print(model.summary())
-
-        '''if len(filtered) > 0:
-            filtered['log_demand'] = np.log(filtered['Demand kWh per hour'])                  # Logartitmen av strømprisen
-            filtered['log_price'] = np.log(filtered['Price NOK kWh per hour'])                # Logaritmen av strømforbruket
-            filtered['T'] = filtered['Temperatur']
-            filtered['T2'] = filtered['T'] ** 2
-            filtered['T3'] = filtered['T'] ** 3
-            filtered['Chour'] = filtered['Hour']
-
-            hour_dummies = pd.get_dummies(filtered['Chour'], prefix='hour')
-
-
-            # Regresjonsanalyse: log(Demand) = beta_0 + beta_1 * log(Price) + beta_2 * T + beta_3 *T^2 + beta_4 *T^3 + error
-            X = pd.concat([filtered[['log_price', 'T', 'T2', 'T3']], hour_dummies], axis=1)
-            X = sm.add_constant(X).astype(float)                                                      # Legger til en konstant
-            y = filtered['log_demand'].astype(float)                                                  # Setter opp responsvariabelen
-            model = sm.OLS(y, X).fit()                                                  # Kjører en lineær regresjonsanalyse, finner den beste linjen som passer dataene
-            beta_log_log = model.params['log_price']                                      # Forteller om prisfølsomheten
-
-            hour_params = {param: value for param, value in model.params.items() if param.startswith('hour')}
-            hour_str = " + ".join([f"{v: .2f} * {k}" for k, v in hour_params.items()])
-
-            regresjonslinje_log_log = (f"log(demand) = {model.params['const']: .2f} + "
-                                       f"{model.params['log_price']: .2f} *log(price NOK/kWh) + "
-                                       f"{model.params['T']: .2f} *T + "
-                                       f"{model.params['T2']: .4f} *T^2 + "
-                                       f"{model.params['T3']: .4f} *T^3" +
-                                       hour_str)
-
-            print('For ID: ' + str(ID))
-            print(model.summary())
-            print(filtered)
-        else:
-            beta_log_log = np.nan  # Ikke nok data
-            regresjonslinje_log_log = None
-
-        pd.set_option('display.max_colwidth', None)
-        pd.set_option('display.width', None)
-        pd.set_option('display.max_rows', None)
-        resultater.append({
-            'ID': ID,
-            'Prisfølsomhet (beta) for log log logarithm': beta_log_log,
-            'Regresjonsliste for log log logarithm': regresjonslinje_log_log
-        })
-
-    return pd.DataFrame(resultater)'''
-
 
 #-----------------------------------------------------------------------------------
 
