@@ -50,7 +50,7 @@ finne_husstander()
 
 #--------------------------------- REGNE PÅ PRISFØLSOMHET PER TIME FOR TIME ------------------------------------------#
 
-test_liste_husstander = [512, 642, 827] #Bare for test
+test_liste_husstander = [512] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
@@ -421,7 +421,7 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
 def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     resultater = []
     start_dato = '2021-12-01'
-    end_dato = '2021-12-02'
+    end_dato = '2021-12-03'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -432,7 +432,6 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
         demand_ID['Hour'] = demand_ID['Hour'].astype(int)
         demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
 
-        demand_filtered.loc[:, 'Demand kWh per hour'] = demand_filtered['Demand_kWh']
 
         # pris per time:
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
@@ -441,25 +440,47 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
         price_data['Hour'] = price_data['Hour'].astype(int)
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
 
-        price_filtered.loc[:, 'Price NOK kWh per hour'] = price_filtered['Price_NOK_kWh']
 
         # Temperatur:
         Blindern_Temp_t4t['Date'] = pd.to_datetime(Blindern_Temp_t4t['Date'])
         Blindern_Temp_t4t['Hour'] = Blindern_Temp_t4t['Hour'].astype(int)
+
+        Blindern_Temp_t4t['Temperatur24'] = Blindern_Temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
+        Blindern_Temp_t4t['Temperatur72'] = Blindern_Temp_t4t['Temperatur'].rolling(window = 72, min_periods=1).mean()
+
+
         temp_filtered = Blindern_Temp_t4t[
             (Blindern_Temp_t4t['Date'] >= start_dato) & (Blindern_Temp_t4t['Date'] <= end_dato)]
 
-        temp_filtered.loc[:, 'Temperatur'] = temp_filtered['Temperatur']
 
         # Merge datasettene til et stort:
         merged_1 = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
         merged_1['ID'] = ID
-        merged = pd.merge(merged_1, Blindern_Temp_t4t, on=['Date', 'Hour'])
+        merged = pd.merge(merged_1, temp_filtered, on=['Date', 'Hour'])
 
         filtered = merged[
             (merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0) & (merged['Temperatur'].notnull())].copy()
 
-        if len(filtered) > 0:
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_rows', None)
+
+        df = pd.DataFrame(filtered)
+
+        print(df)
+
+        df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+                                                            '11', '12', '13', '14', '15', '16', '17', '18', '19',
+                                                            '20', '21', '22', '23', '24'], ordered=False)
+
+        y,X = patsy.dmatrices('np.log(Demand_kWh) ~ np.log(Price_NOK_kWh) + Temperatur24 + '
+                              'Temperatur24**2 + Temperatur24**3 + Temperatur72 + '
+                              'C(Hour, Treatment(reference=1))', data = df, return_type = 'dataframe')
+
+        model = sm.OLS(y, X).fit()
+        print(model.summary())
+
+        '''if len(filtered) > 0:
             filtered['log_demand'] = np.log(filtered['Demand kWh per hour'])                  # Logartitmen av strømprisen
             filtered['log_price'] = np.log(filtered['Price NOK kWh per hour'])                # Logaritmen av strømforbruket
             filtered['T'] = filtered['Temperatur']
@@ -503,7 +524,8 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
             'Regresjonsliste for log log logarithm': regresjonslinje_log_log
         })
 
-    return pd.DataFrame(resultater)
+    return pd.DataFrame(resultater)'''
+
 
 #-----------------------------------------------------------------------------------
 
