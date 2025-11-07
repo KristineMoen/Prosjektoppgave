@@ -5,6 +5,7 @@ import csv
 import row
 
 import statsmodels.api as sm
+import patsy
 import mplcursors
 
 # -------------------------------------- LESER DATA --------------------------------------#
@@ -464,9 +465,9 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
             filtered['T'] = filtered['Temperatur']
             filtered['T2'] = filtered['T'] ** 2
             filtered['T3'] = filtered['T'] ** 3
-            filtered['hour'] = filtered['Hour']
+            filtered['Chour'] = filtered['Hour']
 
-            hour_dummies = pd.get_dummies(filtered['hour'], prefix='hour')
+            hour_dummies = pd.get_dummies(filtered['Chour'], prefix='hour')
 
 
             # Regresjonsanalyse: log(Demand) = beta_0 + beta_1 * log(Price) + beta_2 * T + beta_3 *T^2 + beta_4 *T^3 + error
@@ -488,6 +489,7 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
 
             print('For ID: ' + str(ID))
             print(model.summary())
+            print(filtered)
         else:
             beta_log_log = np.nan  # Ikke nok data
             regresjonslinje_log_log = None
