@@ -428,11 +428,11 @@ def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_up
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-resultater = direkte_prisfølsomhet_time(test_liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = direkte_prisfølsomhet_time(test_liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_tempfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = lin_log_prisfølsomhet_pris_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t)
-#resultater = log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+resultater = log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
 print(resultater)
 
