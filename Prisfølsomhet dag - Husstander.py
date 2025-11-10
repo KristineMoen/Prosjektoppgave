@@ -12,7 +12,7 @@ import patsy
 
 data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
 
-data_price = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/prices.csv')
+data_price = pd.read_csv('prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
 Blindern_Temperatur_dag = pd.read_csv('Blindern_Temperatur_dag.csv')
