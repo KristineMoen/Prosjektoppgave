@@ -56,12 +56,12 @@ test_liste_husstander = [512] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
-'''Regresjon for "direkte", ren regresjonsanalyse: demand = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + beta_4 *T^3 + sum(alpha_h *time_h) + error'''
+'''Regresjon for "direkte", ren regresjonsanalyse: demand = beta_0 + beta_1 *pris + beta_2 * Temperatur24 + beta_3 * Temepartur24^2 + Beta_4 * Temperatur24^3
+                                                             + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error'''
 
 def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    resultater = []
-    start_dato = '2021-12-01'
-    end_dato ='2021-12-31'
+    start_dato = '2021-04-01'
+    end_dato ='2022-03-31'
 
     for ID in test_liste_husstander:
         # demand per time:
@@ -102,7 +102,7 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
         df['Month'] = df['Date'].dt.month
         df['Month'] = df['Date'].dt.strftime('%B')
 
-        print(df)
+        #print(df)
 
         df['Hour'] = df['Hour'].astype(str)
         df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
@@ -125,15 +125,22 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
 
 #-----------------------------------------------------------------------------------
 '''Regresjon for log-lin/ lin-log: 
-      1) log(demand) = beta_0 + beta_1 *T + beta_2 *T^2 + beta_3 *T^3 + beta_4 *pris + sum(alpha_h *time_h) + error
-      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 + sum(alpha_h *time_h) + error
-      3) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 + sum(alpha_h *time_h) + error
+      1) log(demand) = beta_0 + beta_1 * Temepartur24 + beta_2 *Temperatur24^2 + beta_3 *Temepartur24^3 + Beta_4 * pris
+                        + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error
+      
+      
+      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *Temperatur24 + beta_3 *Temepartur24^2 + Beta_4 *Temperatur24^3 + 
+                        + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error
+      
+      
+      3) log(demand) = beta_0 + beta_1 * pris + beta_2 *Temperatur24 + beta_3 *Temepartur24^2 + Beta_4 *Temperatur24^3 + 
+                        + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error
 '''
 
-def log_lin_prisfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+def log_lin_tempfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t):
 
-    start_dato = '2021-12-01'
-    end_dato = '2021-12-02'
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -175,11 +182,11 @@ def log_lin_prisfølsomhet_temp_time(test_liste_husstander,data_demand, data_pri
 
         df = pd.DataFrame(filtered)
 
-        df['Date'] = pd.to_datetime(df['Date'])
-        df['Month'] = df['Date'].dt.month
-        df['Month'] = df['Date'].dt.strftime('%B')
+        #df['Date'] = pd.to_datetime(df['Date'])
+        #df['Month'] = df['Date'].dt.month
+        #df['Month'] = df['Date'].dt.strftime('%B')
 
-        print(df)
+        #print(df)
 
         df['Hour'] = df['Hour'].astype(str)
         df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
@@ -190,7 +197,7 @@ def log_lin_prisfølsomhet_temp_time(test_liste_husstander,data_demand, data_pri
                                                               'July', 'August', 'September', 'October', 'November',
                                                               'December'], ordered=True)
 
-        y, X = patsy.dmatrices('np.log(Demand_kWh) ~ Temperatur + Price_NOK_kWh + Temperatur24 + '
+        y, X = patsy.dmatrices('np.log(Demand_kWh) ~ Temperatur + Temperatur24 + '
                                'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
                                'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
                                'C(Hour, Treatment(reference="1")) * Temperatur72',
@@ -313,11 +320,11 @@ def log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price
 
         df = pd.DataFrame(filtered)
 
-        df['Date'] = pd.to_datetime(df['Date'])
-        df['Month'] = df['Date'].dt.month
-        df['Month'] = df['Date'].dt.strftime('%B')
+        #df['Date'] = pd.to_datetime(df['Date'])
+        #df['Month'] = df['Date'].dt.month
+        #df['Month'] = df['Date'].dt.strftime('%B')
 
-        print(df)
+        #print(df)
 
         df['Hour'] = df['Hour'].astype(str)
         df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
@@ -334,16 +341,17 @@ def log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price
                                'C(Hour, Treatment(reference="1")) * Temperatur72',
                                data=df, return_type='dataframe', NA_action='drop')
 
-        model = sm.OLS(y, X).fit()
+        model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
         print(model.summary())
 
 #-----------------------------------------------------------------------------------
 
-'''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + beta_4 *T^3 + sum(alpha_h *time_h) + error'''
+'''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *Temperatur24 + beta_3 *Temperatur24^2 + beta_4 *Temperatur24^3 
+                                        + Temperatur72 + Hour_i + Hour_i*Temperatur72 + error'''
 
 def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-12-01'
-    end_dato = '2021-12-05'
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -413,18 +421,18 @@ def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_up
                               'C(Hour, Treatment(reference="1")) * Temperatur72',
                               data = df, return_type = 'dataframe', NA_action='drop')
 
-        model = sm.OLS(y, X).fit()
+        model = sm.OLS(y, X).fit(cov_type= 'HAC', cov_kwds = {'maxlags': 24})
         print(model.summary())
 
 #-----------------------------------------------------------------------------------
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-#resultater = direkte_prisfølsomhet_time(test_liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
-#resultater = log_lin_prisfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+resultater = direkte_prisfølsomhet_time(test_liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = log_lin_tempfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = lin_log_prisfølsomhet_pris_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t)
-resultater = log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
 print(resultater)
 
