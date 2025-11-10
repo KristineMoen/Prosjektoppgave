@@ -57,7 +57,7 @@ test_liste_husstander = [512] #Bare for test
 #-----------------------------------------------------------------------------------
 
 '''Regresjon for "direkte", ren regresjonsanalyse: demand = beta_0 + beta_1 *pris + beta_2 * Temperatur24 + beta_3 * Temepartur24^2 + Beta_4 * Temperatur24^3
-                                                             + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error'''
+                                                             + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error'''
 
 def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-04-01'
@@ -126,15 +126,15 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
 #-----------------------------------------------------------------------------------
 '''Regresjon for log-lin/ lin-log: 
       1) log(demand) = beta_0 + beta_1 * Temepartur24 + beta_2 *Temperatur24^2 + beta_3 *Temepartur24^3 + Beta_4 * pris
-                        + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error
+                        + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error
       
       
       2) demand = beta_0 + beta_1 *log(pris) + beta_2 *Temperatur24 + beta_3 *Temepartur24^2 + Beta_4 *Temperatur24^3 + 
-                        + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error
+                        + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error
       
       
       3) log(demand) = beta_0 + beta_1 * pris + beta_2 *Temperatur24 + beta_3 *Temepartur24^2 + Beta_4 *Temperatur24^3 + 
-                        + Temperatur72 + Hour_i + Hour_i * Temperatur72 + error
+                        + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error
 '''
 
 def log_lin_tempfølsomhet_temp_time(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temp_t4t):
@@ -347,7 +347,7 @@ def log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price
 #-----------------------------------------------------------------------------------
 
 '''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *Temperatur24 + beta_3 *Temperatur24^2 + beta_4 *Temperatur24^3 
-                                        + Temperatur72 + Hour_i + Hour_i*Temperatur72 + error'''
+                                        + Temperatur72 + Hour_i + Month + Hour_i*Temperatur72 + error'''
 
 def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-04-01'

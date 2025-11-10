@@ -16,7 +16,6 @@ data_price = pd.read_csv('prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
 Blindern_Temperatur_dag = pd.read_csv('Blindern_Temperatur_dag.csv')
-Blindern_temp_t4t = pd.read_csv('Blindern_temperatur_t4t.csv')
 
 #------------------------------------- FINNE AKTUELLE HUSSTANDER -------------------------------------------#
 
@@ -55,9 +54,10 @@ test_liste_husstander = [512] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
-'''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + beta_4 *T^3'''
+'''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + beta_4 *T^3 + Temperatur3 + 
+                                        Month + Month*Temperatur3'''
 
-def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag, Blinder_temp_t4t):
+def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
 
@@ -82,8 +82,7 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
         #Temperatur:
         Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
 
-        #Blindern_temp_t4t['Temperatur24'] = Blindern_temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
-        #Blindern_temp_t4t['Temperatur72'] = Blindern_temp_t4t['Temperatur'].rolling(window=72, min_periods=1).mean()
+        Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3, min_periods=1).mean()
 
         temp_filtered = Blindern_Temperatur_dag[(Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
@@ -103,10 +102,10 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
         df['Month'] = df['Date'].dt.month
         df['Month'] = df['Date'].dt.strftime('%B')
 
-        pd.set_option('display.max_colwidth', None)
-        pd.set_option('display.width', None)
-        pd.set_option('display.max_rows', None)
-        print(df)
+        #pd.set_option('display.max_colwidth', None)
+        #pd.set_option('display.width', None)
+        #pd.set_option('display.max_rows', None)
+        #print(df)
 
         # Kjører regresjonsanalysen:
 
@@ -115,8 +114,8 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
                                                               'December'], ordered=True)
 
         y, X = patsy.dmatrices('np.log(Q("Avg demand kWh per day")) ~ np.log(Q("Avg price NOK kWh per day")) + Temperatur + '
-                               'I(Temperatur**2) + I(Temperatur**3) + '
-                               'C(Month, Treatment(reference = "April"))',
+                               'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 + '
+                               'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
@@ -125,12 +124,17 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
 #-----------------------------------------------------------------------------------
 
 '''Regresjon for log-lin/ lin-log: 
-      1) log(demand) = beta_0 + beta_1 *T + beta_2 *T^2 + beta_3 *T^3 + beta_4 *pris
-      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3
-      3) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3
+      1) log(demand) = beta_0 + beta_1 *T + beta_2 *T^2 + beta_3 *T^3 + beta_4 *pris +
+                        Temperatur3 + Month + Month*Temperatur3
+                        
+      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 +
+                    Temperatur3 + Month + Month*Temperatur3
+      
+      3) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 +
+                    Temperatur3 + Month + Month*Temperatur3
 '''
 
-def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
+def log_lin_tempfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
 
@@ -154,6 +158,8 @@ def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_pric
 
         # Temperatur:
         Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+
+        Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3, min_periods=1).mean()
         temp_filtered = Blindern_Temperatur_dag[
             (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
@@ -185,16 +191,16 @@ def log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_pric
                                                               'December'], ordered=True)
 
         y, X = patsy.dmatrices('np.log(Q("Avg demand kWh per day")) ~ Temperatur + '
-                               'I(Temperatur**2) + I(Temperatur**3) + Q("Avg price NOK kWh per day") +  '
-                               'C(Month, Treatment(reference = "April"))',
+                               'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 +  '
+                               'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
         print(model.summary())
 
 def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
-    start_dato = '2021-12-01'
-    end_dato = '2021-12-31'
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
 
     for ID in test_liste_husstander:
         # Gjennomsnits demand per dag:
@@ -216,6 +222,8 @@ def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_pri
 
         # Temperatur:
         Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+        Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3,
+                                                                                               min_periods=1).mean()
         temp_filtered = Blindern_Temperatur_dag[
             (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
@@ -247,8 +255,8 @@ def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_pri
                                                               'December'], ordered=True)
 
         y, X = patsy.dmatrices('Q("Avg demand kWh per day") ~ np.log(Q("Avg price NOK kWh per day")) + Temperatur + '
-                               'I(Temperatur**2) + I(Temperatur**3) + '
-                               'C(Month, Treatment(reference = "April"))',
+                               'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 + '
+                               'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
@@ -279,6 +287,8 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
 
         # Temperatur:
         Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+        Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3,
+                                                                                               min_periods=1).mean()
         temp_filtered = Blindern_Temperatur_dag[
             (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
@@ -310,8 +320,8 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
                                                               'December'], ordered=True)
 
         y, X = patsy.dmatrices('np.log(Q("Avg demand kWh per day")) ~ Q("Avg price NOK kWh per day") + Temperatur + '
-                               'I(Temperatur**2) + I(Temperatur**3) + '
-                               'C(Month, Treatment(reference = "April"))',
+                               'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 + '
+                               'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
@@ -319,11 +329,12 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
 
 #-----------------------------------------------------------------------------------
 
-'''Regresjon for "direkte", ren regresjonsanalyse: demand = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + beta_4 *T^3'''
+'''Regresjon for "direkte", ren regresjonsanalyse: demand = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + beta_4 *T^3 +
+                                                            Temperatur3 + Month + Month*Temperatur3'''
 
 def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag):
-    start_dato = '2021-12-01'
-    end_dato = '2021-12-31'
+    start_dato = '2021-04-01'
+    end_dato = '2022-03-31'
 
     for ID in test_liste_husstander:
         # Gjennomsnits demand per dag:
@@ -345,6 +356,8 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
 
         # Temperatur:
         Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+        Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3, min_periods=1).mean()
+
         temp_filtered = Blindern_Temperatur_dag[
             (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
@@ -376,8 +389,8 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
                                                               'December'], ordered=True)
 
         y, X = patsy.dmatrices('Q("Avg demand kWh per day") ~ Q("Avg price NOK kWh per day") + Temperatur + '
-                               'I(Temperatur**2) + I(Temperatur**3) + '
-                               'C(Month, Treatment(reference = "April"))',
+                               'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 + '
+                               'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
@@ -387,8 +400,8 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-#resultater = log_log_prisfølsomhet_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag, Blindern_temp_t4t)
-#resultater = log_lin_prisfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
+#resultater = log_log_prisfølsomhet_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
+#resultater = log_lin_tempfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
 #resultater = lin_log_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
 #resultater = log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
 resultater = direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
