@@ -52,7 +52,8 @@ test_liste_husstander = [512, 642] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
-'''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + beta_4 *T^3'''
+'''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + beta_4 *T^3 +
+                                        Temperatur3 + Month + Month*Temperatur3'''
 
 def log_log_dag(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
     start_dato = pd.to_datetime('2021-04-01')
@@ -78,10 +79,15 @@ def log_log_dag(liste_husstander, data_demand, data_price_update, data_household
 
     #Gjennomsnits temoperatur:
     Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+    Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3,
+                                                                                           min_periods=1).mean()
+
+    temp_filtered = Blindern_Temperatur_dag[
+        (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
     #Merge:
     merged_1 = pd.merge(total_daglig_demand, tot_daglig_pris, on = 'Date')
-    merged = pd.merge(merged_1, Blindern_Temperatur_dag, on ='Date')
+    merged = pd.merge(merged_1, temp_filtered, on ='Date')
 
     filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0 ) & (merged['Temperatur'].notnull())].copy()
 
@@ -104,8 +110,8 @@ def log_log_dag(liste_husstander, data_demand, data_price_update, data_household
 
     y, X = patsy.dmatrices(
         'np.log(Q("Avg demand kWh per day")) ~ np.log(Q("Avg price NOK kWh per day")) + Temperatur + '
-        'I(Temperatur**2) + I(Temperatur**3) + '
-        'C(Month, Treatment(reference = "April"))',
+        'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 + '
+        'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
         data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit()
@@ -114,9 +120,11 @@ def log_log_dag(liste_husstander, data_demand, data_price_update, data_household
 #-----------------------------------------------------------------------------------
 
 '''Regresjon for log-lin/ lin-log: 
-      1) log(demand) = beta_0 + beta_1 *T + beta_2 *T^2 + beta_3 *T^3 + beta_4 *pris
-      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3
-      3) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3
+      1) log(demand) = beta_0 + beta_1 *T + beta_2 *T^2 + beta_3 *T^3 + Temperatur3 + Month + Month*Temperatur3
+      
+      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 + Temperatur3 + Month + Month*Temperatur3
+      
+      3) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 + Temperatur3 + Month + Month*Temperatur3
 '''
 
 def log_lin_temp_dag(liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
@@ -143,10 +151,15 @@ def log_lin_temp_dag(liste_husstander,data_demand, data_price_update, data_house
 
     # Gjennomsnits temoperatur:
     Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+    Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3,
+                                                                                           min_periods=1).mean()
+
+    temp_filtered = Blindern_Temperatur_dag[
+        (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
     # Merge:
     merged_1 = pd.merge(total_daglig_demand, tot_daglig_pris, on='Date')
-    merged = pd.merge(merged_1, Blindern_Temperatur_dag, on='Date')
+    merged = pd.merge(merged_1, temp_filtered, on='Date')
 
     filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0) & (
         merged['Temperatur'].notnull())].copy()
@@ -169,8 +182,8 @@ def log_lin_temp_dag(liste_husstander,data_demand, data_price_update, data_house
                                                           'December'], ordered=True)
 
     y, X = patsy.dmatrices('np.log(Q("Avg demand kWh per day")) ~ Temperatur + '
-                           'I(Temperatur**2) + I(Temperatur**3) + Q("Avg price NOK kWh per day") +  '
-                           'C(Month, Treatment(reference = "April"))',
+                           'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 +  '
+                           'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit()
@@ -201,10 +214,15 @@ def lin_log_pris_dag(liste_husstander, data_demand, data_price_update, data_hous
 
     # Gjennomsnits temoperatur:
     Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+    Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3,
+                                                                                           min_periods=1).mean()
+
+    temp_filtered = Blindern_Temperatur_dag[
+        (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
     # Merge:
     merged_1 = pd.merge(total_daglig_demand, tot_daglig_pris, on='Date')
-    merged = pd.merge(merged_1, Blindern_Temperatur_dag, on='Date')
+    merged = pd.merge(merged_1, temp_filtered, on='Date')
 
     filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0) & (
         merged['Temperatur'].notnull())].copy()
@@ -227,8 +245,8 @@ def lin_log_pris_dag(liste_husstander, data_demand, data_price_update, data_hous
                                                           'December'], ordered=True)
 
     y, X = patsy.dmatrices('Q("Avg demand kWh per day") ~ np.log(Q("Avg price NOK kWh per day")) + Temperatur + '
-                           'I(Temperatur**2) + I(Temperatur**3) + '
-                           'C(Month, Treatment(reference = "April"))',
+                           'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 + '
+                           'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit()
@@ -259,10 +277,15 @@ def log_lin_pris_dag(liste_husstander,data_demand,data_price_update,data_househo
 
     # Gjennomsnits temoperatur:
     Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+    Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3,
+                                                                                           min_periods=1).mean()
+
+    temp_filtered = Blindern_Temperatur_dag[
+        (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
     # Merge:
     merged_1 = pd.merge(total_daglig_demand, tot_daglig_pris, on='Date')
-    merged = pd.merge(merged_1, Blindern_Temperatur_dag, on='Date')
+    merged = pd.merge(merged_1, temp_filtered, on='Date')
 
     filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0) & (
         merged['Temperatur'].notnull())].copy()
@@ -285,8 +308,8 @@ def log_lin_pris_dag(liste_husstander,data_demand,data_price_update,data_househo
                                                           'December'], ordered=True)
 
     y, X = patsy.dmatrices('np.log(Q("Avg demand kWh per day")) ~ Q("Avg price NOK kWh per day") + Temperatur + '
-                           'I(Temperatur**2) + I(Temperatur**3) + '
-                           'C(Month, Treatment(reference = "April"))',
+                           'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 + '
+                           'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit()
@@ -320,10 +343,15 @@ def direkte_dag(liste_husstander,data_demand,data_price_update,data_households, 
 
     # Gjennomsnits temoperatur:
     Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
+    Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3,
+                                                                                           min_periods=1).mean()
+
+    temp_filtered = Blindern_Temperatur_dag[
+        (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
 
     # Merge:
     merged_1 = pd.merge(total_daglig_demand, tot_daglig_pris, on='Date')
-    merged = pd.merge(merged_1, Blindern_Temperatur_dag, on='Date')
+    merged = pd.merge(merged_1, temp_filtered, on='Date')
 
     filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0) & (
         merged['Temperatur'].notnull())].copy()
@@ -346,8 +374,8 @@ def direkte_dag(liste_husstander,data_demand,data_price_update,data_households, 
                                                           'December'], ordered=True)
 
     y, X = patsy.dmatrices('Q("Avg demand kWh per day") ~ Q("Avg price NOK kWh per day") + Temperatur + '
-                           'I(Temperatur**2) + I(Temperatur**3) + '
-                           'C(Month, Treatment(reference = "April"))',
+                           'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 +'
+                           'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit()
