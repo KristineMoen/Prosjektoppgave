@@ -59,7 +59,7 @@ test_liste_husstander = [512, 642] #Bare for test
 '''Regresjon for "direkte", ren regresjonsanalyse: demand = beta_0 + beta_1 *pris + beta_2 * Temperatur24 + beta_3 * Temepartur24^2 + Beta_4 * Temperatur24^3
                                                              + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error'''
 
-def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+def direkte_prisfolsomhet_time(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-12-01'
     end_dato ='2021-12-05'
 
@@ -126,6 +126,7 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
+        print(ID)
         print(model.summary())
 
 
@@ -140,7 +141,7 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
                         + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error
 '''
 
-def lin_log_prisfølsomhet_pris_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+def lin_log_prisfolsomhet_pris_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
     start_dato = pd.to_datetime(start_dato)
@@ -208,10 +209,11 @@ def lin_log_prisfølsomhet_pris_t4t(test_liste_husstander, data_demand, data_pri
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit()
+        print(ID)
         print(model.summary())
 
 
-def log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t):
+def log_lin_prisfolsomhet_pris_t4t(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t):
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
     start_dato = pd.to_datetime(start_dato)
@@ -278,6 +280,7 @@ def log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price
                                data=df, return_type='dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
+        print(ID)
         print(model.summary())
 
 #-----------------------------------------------------------------------------------
@@ -285,7 +288,7 @@ def log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price
 '''Regresjon for log-log: log(demand) = beta_0 + beta_1 *log(pris) + beta_2 *Temperatur24 + beta_3 *Temperatur24^2 + beta_4 *Temperatur24^3 
                                         + Temperatur72 + Hour_i + Month + Hour_i*Temperatur72 + error'''
 
-def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+def log_log_prisfolsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
     start_dato = pd.to_datetime(start_dato)
@@ -342,7 +345,7 @@ def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_up
 
         #print(df)
 
-        #Kjører regresjonsanalysen:
+        # Kjører regresjonsanalysen:
 
         df['Hour'] = df['Hour'].astype(str)
         df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
@@ -359,16 +362,17 @@ def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_up
                               data = df, return_type = 'dataframe', NA_action='drop')
 
         model = sm.OLS(y, X).fit(cov_type= 'HAC', cov_kwds = {'maxlags': 24})
+        print(ID)
         print(model.summary())
 
 #-----------------------------------------------------------------------------------
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-resultater = direkte_prisfølsomhet_time(liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
-#resultater = lin_log_prisfølsomhet_pris_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
-#resultater = log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t)
-#resultater = log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = direkte_prisfolsomhet_time(husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = lin_log_prisfolsomhet_pris_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = log_lin_prisfolsomhet_pris_t4t(liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t)
+resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
 print(resultater)
 
