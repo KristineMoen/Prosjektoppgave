@@ -21,5 +21,10 @@ model = sm.OLS(y, X).fit()
 
 
 model = sm.OLS(y, X).fit()
-print(model.summary())
+#print(model.summary())
 
+
+strompriser = pd.Series([0.45, -0.12, 0.78, -0.05, 1.23, -0.03])
+strompriser_renset = strompriser.apply(lambda x: x if x > 0 else 0.01)
+
+print(strompriser_renset)

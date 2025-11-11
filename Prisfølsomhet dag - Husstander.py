@@ -75,6 +75,8 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+        price_filtered.loc[:, 'Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(
+            lambda x: x if x > 0 else 0.01)  # Dette skal fikset prisen, om den er negativ
 
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh']/24
@@ -124,79 +126,13 @@ def log_log_prisfølsomhet_dag(test_liste_husstander, data_demand, data_price_up
 #-----------------------------------------------------------------------------------
 
 '''Regresjon for log-lin/ lin-log: 
-      1) log(demand) = beta_0 + beta_1 *T + beta_2 *T^2 + beta_3 *T^3 + beta_4 *pris +
-                        Temperatur3 + Month + Month*Temperatur3
                         
-      2) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 +
+      1) demand = beta_0 + beta_1 *log(pris) + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 +
                     Temperatur3 + Month + Month*Temperatur3
       
-      3) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 +
+      2) log(demand) = beta_0 + beta_1 *pris + beta_2 *T + beta_3 *T^2 + Beta_4 *T^3 +
                     Temperatur3 + Month + Month*Temperatur3
 '''
-
-def log_lin_tempfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
-    start_dato = '2021-04-01'
-    end_dato = '2022-03-31'
-
-    for ID in test_liste_husstander:
-        # Gjennomsnits demand per dag:
-        demand_ID = data_demand[data_demand['ID'] == ID].copy()
-        demand_ID['Date'] = pd.to_datetime(demand_ID['Date'])
-        demand_filtered = demand_ID[(demand_ID['Date'] >= start_dato) & (demand_ID['Date'] <= end_dato)]
-
-        avg_demand_per_day = demand_filtered.groupby('Date')['Demand_kWh'].sum().reset_index()
-        avg_demand_per_day['Avg demand kWh per day'] = avg_demand_per_day['Demand_kWh'] / 24
-
-        # Gjennomsnitss pris per dag:
-        price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
-        price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
-        price_data['Date'] = pd.to_datetime(price_data['Date'])
-        price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
-
-        avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
-        avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
-
-        # Temperatur:
-        Blindern_Temperatur_dag['Date'] = pd.to_datetime(Blindern_Temperatur_dag['Date'])
-
-        Blindern_Temperatur_dag['Temperatur3'] = Blindern_Temperatur_dag['Temperatur'].rolling(window=3, min_periods=1).mean()
-        temp_filtered = Blindern_Temperatur_dag[
-            (Blindern_Temperatur_dag['Date'] >= start_dato) & (Blindern_Temperatur_dag['Date'] <= end_dato)]
-
-        # Merge datasettene til et stort et:
-        merged_1 = pd.merge(avg_demand_per_day, avg_price_per_day, on='Date')
-        merged_1['ID'] = ID
-        merged = pd.merge(merged_1, temp_filtered, on='Date')
-
-        filtered = merged[(merged['Avg demand kWh per day'] > 0) & (merged['Avg price NOK kWh per day'] > 0) & (
-            merged['Temperatur'].notnull())].copy()
-
-        df = pd.DataFrame(filtered)
-        cols = ['ID'] + [col for col in df.columns if col != 'ID']
-        df = df[cols]
-
-        df['Date'] = pd.to_datetime(df['Date'])
-        df['Month'] = df['Date'].dt.month
-        df['Month'] = df['Date'].dt.strftime('%B')
-
-        # pd.set_option('display.max_colwidth', None)
-        # pd.set_option('display.width', None)
-        # pd.set_option('display.max_rows', None)
-        #print(df)
-
-        # Kjører regresjonsanalysen:
-
-        df['Month'] = pd.Categorical(df['Month'], categories=['January', 'February', 'March', 'April', 'May', 'June',
-                                                              'July', 'August', 'September', 'October', 'November',
-                                                              'December'], ordered=True)
-
-        y, X = patsy.dmatrices('np.log(Q("Avg demand kWh per day")) ~ Temperatur + '
-                               'I(Temperatur**2) + I(Temperatur**3) + Temperatur3 +  '
-                               'C(Month, Treatment(reference = "April")) + C(Month, Treatment(reference = "April")) * Temperatur3',
-                               data=df, return_type='dataframe', NA_action='drop')
-
-        model = sm.OLS(y, X).fit()
-        print(model.summary())
 
 def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temperatur_dag):
     start_dato = '2021-04-01'
@@ -216,6 +152,8 @@ def lin_log_prisfølsomhet_pris_dag(test_liste_husstander, data_demand, data_pri
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+        price_filtered.loc[:, 'Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(
+            lambda x: x if x > 0 else 0.01)  # Dette skal fikset prisen, om den er negativ
 
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
@@ -281,6 +219,8 @@ def log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+        price_filtered.loc[:, 'Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(
+            lambda x: x if x > 0 else 0.01)  # Dette skal fikset prisen, om den er negativ
 
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
@@ -350,6 +290,8 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
         price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
         price_data['Date'] = pd.to_datetime(price_data['Date'])
         price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+        price_filtered.loc[:, 'Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(
+            lambda x: x if x > 0 else 0.01)  # Dette skal fikset prisen, om den er negativ
 
         avg_price_per_day = price_filtered.groupby('Date')['Price_NOK_kWh'].sum().reset_index()
         avg_price_per_day['Avg price NOK kWh per day'] = avg_price_per_day['Price_NOK_kWh'] / 24
@@ -401,7 +343,6 @@ def direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_upda
 '''Kjøre funksjonene, printer ut resultatene '''
 
 #resultater = log_log_prisfølsomhet_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
-#resultater = log_lin_tempfølsomhet_temp_dag(test_liste_husstander,data_demand, data_price_update, data_households, Blindern_Temperatur_dag)
 #resultater = lin_log_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
 #resultater = log_lin_prisfølsomhet_pris_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
 resultater = direkte_prisfølsomhet_dag(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temperatur_dag)
