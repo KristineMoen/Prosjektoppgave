@@ -52,7 +52,7 @@ finne_husstander()
 
 #--------------------------------- REGNE PÅ PRISFØLSOMHET PER TIME FOR TIME ------------------------------------------#
 
-test_liste_husstander = [512] #Bare for test
+test_liste_husstander = [512, 642] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
@@ -60,8 +60,8 @@ test_liste_husstander = [512] #Bare for test
                                                              + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error'''
 
 def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-04-01'
-    end_dato ='2022-03-31'
+    start_dato = '2021-12-01'
+    end_dato ='2021-12-05'
 
     for ID in test_liste_husstander:
         # demand per time:
@@ -104,7 +104,11 @@ def direkte_prisfølsomhet_time(test_liste_husstander, data_demand, data_price_u
         df['Month'] = df['Date'].dt.month
         df['Month'] = df['Date'].dt.strftime('%B')
 
-        #print(df)
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_rows', None)
+
+        print(df)
 
         df['Hour'] = df['Hour'].astype(str)
         df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
@@ -361,10 +365,10 @@ def log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_up
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-#resultater = direkte_prisfølsomhet_time(test_liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
+resultater = direkte_prisfølsomhet_time(liste_husstander,data_demand,data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = lin_log_prisfølsomhet_pris_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfølsomhet_pris_t4t(test_liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t)
-resultater = log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = log_log_prisfølsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
 print(resultater)
 
