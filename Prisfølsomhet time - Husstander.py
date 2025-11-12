@@ -289,8 +289,8 @@ def log_lin_prisfolsomhet_pris_t4t(test_liste_husstander,data_demand,data_price_
                                         + Temperatur72 + Hour_i + Month + Hour_i*Temperatur72 + error'''
 
 def log_log_prisfolsomhet_t4t(test_liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-04-01'
-    end_dato = '2022-03-31'
+    start_dato = '2021-08-01'
+    end_dato = '2021-12-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -361,7 +361,7 @@ def log_log_prisfolsomhet_t4t(test_liste_husstander, data_demand, data_price_upd
                               'C(Hour, Treatment(reference="1")) * Temperatur72',
                               data = df, return_type = 'dataframe', NA_action='drop')
 
-        model = sm.OLS(y, X).fit(cov_type= 'HAC', cov_kwds = {'maxlags': 24})
+        model = sm.OLS(y, X).fit()
         print(ID)
         print(model.summary())
 
