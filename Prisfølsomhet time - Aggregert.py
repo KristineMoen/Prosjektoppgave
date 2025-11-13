@@ -214,8 +214,8 @@ def lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
 
 
 def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t):
-    start_dato = '2021-04-01'
-    end_dato = '2022-03-31'
+    start_dato = '2022-01-01'
+    end_dato = '2022-01-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -291,7 +291,7 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
 
 def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-08-01'
-    end_dato = '2021-12-31'
+    end_dato = '2022-02-28'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -365,8 +365,8 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-resultater = direkte_prisfolsomhet_time(liste_husstander,data_demand,data_price_update,data_households,Blindern_Temp_t4t)
+#resultater = direkte_prisfolsomhet_time(liste_husstander,data_demand,data_price_update,data_households,Blindern_Temp_t4t)
 #resultater = lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
-#resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
