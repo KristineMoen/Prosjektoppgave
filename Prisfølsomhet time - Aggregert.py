@@ -60,8 +60,8 @@ test_liste_husstander = [512, 642] #Bare for test
                                                              + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error'''
 
 def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-04-01'
-    end_dato ='2022-03-31'
+    start_dato = '2021-12-01'
+    end_dato ='2021-12-31'
 
     # Gjennomsnits demand per dag for alle ID-ene:
     data_demand['Date'] = pd.to_datetime(data_demand['Date'])
@@ -105,6 +105,8 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
     df['Month'] = df['Date'].dt.month
     df['Month'] = df['Date'].dt.strftime('%B')
 
+    df['Wday'] = df['Date'].dt.weekday.astype(str)
+
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.width', None)
     pd.set_option('display.max_rows', None)
@@ -120,10 +122,15 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
                                                           'July', 'August', 'September', 'October', 'November',
                                                           'December'], ordered=True)
 
+    # 0 = mandag, 1 = tirsdag, 2 = onsdag, 3 = torsdag, 4 = fredag, 5 = lørdag og 6 = søndag
+    df['Wday'] = pd.Categorical(df['Wday'], categories=['0', '1', '2', '3', '4', '5', '6'], ordered=True)
+
     y, X = patsy.dmatrices('Demand_kWh ~ Price_NOK_kWh + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
-                           'C(Hour, Treatment(reference="1")) * Temperatur72',
+                           'C(Wday, Treatment(reference = "0")) + '
+                           'C(Hour, Treatment(reference="1")) * Temperatur72 + '
+                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1"))',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
@@ -142,8 +149,8 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
 '''
 
 def lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-04-01'
-    end_dato = '2022-03-31'
+    start_dato = '2021-08-01'
+    end_dato = '2021-12-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -188,6 +195,8 @@ def lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
     df['Month'] = df['Date'].dt.month
     df['Month'] = df['Date'].dt.strftime('%B')
 
+    df['Wday'] = df['Date'].dt.weekday.astype(str)
+
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.width', None)
     pd.set_option('display.max_rows', None)
@@ -203,10 +212,15 @@ def lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
                                                           'July', 'August', 'September', 'October', 'November',
                                                           'December'], ordered=True)
 
+    # 0 = mandag, 1 = tirsdag, 2 = onsdag, 3 = torsdag, 4 = fredag, 5 = lørdag og 6 = søndag
+    df['Wday'] = pd.Categorical(df['Wday'], categories=['0', '1', '2', '3', '4', '5', '6'], ordered=True)
+
     y, X = patsy.dmatrices('Demand_kWh ~ np.log(Price_NOK_kWh) + Temperatur24 + '
-                               'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
-                               'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
-                               'C(Hour, Treatment(reference="1")) * Temperatur72',
+                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
+                            'C(Wday, Treatment(reference = "0")) + '
+                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
+                            'C(Hour, Treatment(reference="1")) * Temperatur72 + '
+                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1"))',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
@@ -214,8 +228,8 @@ def lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
 
 
 def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t):
-    start_dato = '2022-01-01'
-    end_dato = '2022-01-31'
+    start_dato = '2021-08-01'
+    end_dato = '2021-12-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -260,6 +274,8 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
     df['Month'] = df['Date'].dt.month
     df['Month'] = df['Date'].dt.strftime('%B')
 
+    df['Wday'] = df['Date'].dt.weekday.astype(str)
+
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.width', None)
     pd.set_option('display.max_rows', None)
@@ -275,10 +291,15 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
                                                           'July', 'August', 'September', 'October', 'November',
                                                           'December'], ordered=True)
 
+    # 0 = mandag, 1 = tirsdag, 2 = onsdag, 3 = torsdag, 4 = fredag, 5 = lørdag og 6 = søndag
+    df['Wday'] = pd.Categorical(df['Wday'], categories=['0', '1', '2', '3', '4', '5', '6'], ordered=True)
+
     y, X = patsy.dmatrices('np.log(Demand_kWh) ~ Price_NOK_kWh + Temperatur24 + '
                                'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
-                               'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
-                               'C(Hour, Treatment(reference="1")) * Temperatur72',
+                               'C(Wday, Treatment(reference = "0")) + '
+                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
+                            'C(Hour, Treatment(reference="1")) * Temperatur72 + '
+                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1"))',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
@@ -291,7 +312,7 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
 
 def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-08-01'
-    end_dato = '2022-02-28'
+    end_dato = '2021-12-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -336,6 +357,8 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
     df['Month'] = df['Date'].dt.month
     df['Month'] = df['Date'].dt.strftime('%B')
 
+    df['Wday'] = df['Date'].dt.weekday.astype(str)
+
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.width', None)
     pd.set_option('display.max_rows', None)
@@ -351,10 +374,15 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
                                                           'July', 'August', 'September', 'October', 'November',
                                                           'December'], ordered=True)
 
+    # 0 = mandag, 1 = tirsdag, 2 = onsdag, 3 = torsdag, 4 = fredag, 5 = lørdag og 6 = søndag
+    df['Wday'] = pd.Categorical(df['Wday'], categories=['0', '1', '2', '3', '4', '5', '6'], ordered=True)
+
     y, X = patsy.dmatrices('np.log(Demand_kWh) ~ np.log(Price_NOK_kWh) + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
-                           'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
-                           'C(Hour, Treatment(reference="1")) * Temperatur72',
+                           'C(Wday, Treatment(reference = "0")) + '
+                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
+                            'C(Hour, Treatment(reference="1")) * Temperatur72 + '
+                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1"))',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
