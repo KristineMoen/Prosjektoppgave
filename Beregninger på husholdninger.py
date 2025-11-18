@@ -14,7 +14,7 @@ import mplcursors
 data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
 #print(data_demand)
 
-data_price = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/prices.csv')
+data_price = pd.read_csv('prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 #print(data_price)
 
