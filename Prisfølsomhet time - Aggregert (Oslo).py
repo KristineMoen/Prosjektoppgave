@@ -359,10 +359,10 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
 
     df['Wday'] = df['Date'].dt.weekday.astype(str)
 
-    pd.set_option('display.max_colwidth', None)
-    pd.set_option('display.width', None)
-    pd.set_option('display.max_rows', None)
-    # print(df)
+    #pd.set_option('display.max_colwidth', None)
+    #pd.set_option('display.width', None)
+    #pd.set_option('display.max_rows', None)
+    print(df)
 
     # Beregninger:
     df['Hour'] = df['Hour'].astype(str)
