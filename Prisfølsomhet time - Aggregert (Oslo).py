@@ -29,12 +29,13 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] == 4 and      # 4 = Oslo 5 = Bergen 6 = Tromsø 7 = Trondheim
-                rad["Q22"] == 1 and        # 1 = Enebolig 4 = Boligblokk
-                rad["Q23"] == 9 and        # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
-                rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
+                rad["Q_City"] in [4, 1, 2]   and    # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
+                #rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
+                #rad["Q23"] == 9         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
+                #rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
                 #rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
-                #rad["Q20"] == 5
+                #rad["Q1"] == 1          # 1 = Fulgte med på egen strømbruk, 2 = følgte ikke med
+                rad["Q29"] == 1        # 1 = Ja, 2 = Nei
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
@@ -46,13 +47,13 @@ def finne_husstander():
             if not match.empty:
                 liste_husstander.append(int(id_verdi))
 
-    print("ID-er som oppfyller kravene:", liste_husstander)
+    print("ID-er som oppfyller kravene:", len(liste_husstander))
 
 finne_husstander()
 
 #--------------------------------- REGNE PÅ PRISFØLSOMHET PER TIME FOR TIME ------------------------------------------#
 
-test_liste_husstander = [512, 642] #Bare for test
+#test_liste_husstander = [512, 642] #Bare for test
 
 #-----------------------------------------------------------------------------------
 
@@ -60,8 +61,8 @@ test_liste_husstander = [512, 642] #Bare for test
                                                              + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error'''
 
 def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-12-01'
-    end_dato ='2021-12-31'
+    start_dato = '2021-09-01'
+    end_dato ='2022-03-31'
 
     # Gjennomsnits demand per dag for alle ID-ene:
     data_demand['Date'] = pd.to_datetime(data_demand['Date'])
@@ -127,15 +128,17 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
 
     y, X = patsy.dmatrices('Demand_kWh ~ Price_NOK_kWh + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
-                           'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
-                           'C(Wday, Treatment(reference = "0")) + '
-                           'C(Hour, Treatment(reference="1")) * Temperatur72 + '
-                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1"))',
+                           'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "September"))',
+
                            data=df, return_type='dataframe', NA_action='drop')
 
-    model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
-    print(model.summary())
+    ''''C(Wday, Treatment(reference = "0")) + '
+                           'C(Hour, Treatment(reference="1")) * Temperatur72 + '
+                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1")) + '
+                           'C(Month, Treatment(reference = "September")) * C(Wday, Treatment(reference = "0"))','''
 
+    model = sm.OLS(y, X).fit()
+    print(model.summary())
 
 # -----------------------------------------------------------------------------------
 '''Regresjon for log-lin/ lin-log: 
@@ -228,7 +231,7 @@ def lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
 
 
 def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,data_households, Blindern_Temp_t4t):
-    start_dato = '2021-08-01'
+    start_dato = '2021-09-01'
     end_dato = '2021-12-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
@@ -311,8 +314,8 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
                                         + Temperatur72 + Hour_i + Month + Hour_i*Temperatur72 + error'''
 
 def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-08-01'
-    end_dato = '2021-12-31'
+    start_dato = '2021-10-01'
+    end_dato = '2022-03-31'
     start_dato = pd.to_datetime(start_dato)
     end_dato = pd.to_datetime(end_dato)
 
@@ -362,7 +365,7 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
     #pd.set_option('display.max_colwidth', None)
     #pd.set_option('display.width', None)
     #pd.set_option('display.max_rows', None)
-    print(df)
+    #print(df)
 
     # Beregninger:
     df['Hour'] = df['Hour'].astype(str)
@@ -380,9 +383,10 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
     y, X = patsy.dmatrices('np.log(Demand_kWh) ~ np.log(Price_NOK_kWh) + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
                            'C(Wday, Treatment(reference = "0")) + '
-                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "April")) +'
+                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "October")) +'
                             'C(Hour, Treatment(reference="1")) * Temperatur72 + '
-                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1"))',
+                           'C(Wday, Treatment(reference = "0")) * C(Hour, Treatment(reference="1")) + '
+                           'C(Month, Treatment(reference = "October")) * C(Wday, Treatment(reference = "0"))',
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
@@ -393,8 +397,8 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-#resultater = direkte_prisfolsomhet_time(liste_husstander,data_demand,data_price_update,data_households,Blindern_Temp_t4t)
+resultater = direkte_prisfolsomhet_time(liste_husstander,data_demand,data_price_update,data_households,Blindern_Temp_t4t)
 #resultater = lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
-resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
