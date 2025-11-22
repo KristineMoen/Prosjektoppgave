@@ -35,7 +35,11 @@ def finne_husstander():
                 #rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
                 #rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
                 #rad["Q1"] == 1          # 1 = Fulgte med på egen strømbruk, 2 = følgte ikke med
-                rad["Q29"] == 1        # 1 = Ja, 2 = Nei
+                #rad['Q4'] == 4
+                #rad["Q29"] == 1        # 1 = Ja, 2 = Nei
+                #rad["Q8_12"] == 0
+                #rad["Q7"] == 3
+                rad["Q29"] == 2
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
@@ -390,6 +394,87 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
 
     model = sm.OLS(y, X).fit(cov_type='HAC', cov_kwds={'maxlags': 24})
     print(model.summary())
+
+    # plott:
+    beta_2 = model.params['Temperatur24']
+    beta_3 = model.params['I(Temperatur24 ** 2)']
+    beta_4 = model.params['I(Temperatur24 ** 3)']
+
+    hour_1 = 0
+    hour_2 = model.params['C(Hour, Treatment(reference="1"))[T.2]']
+    hour_3 = model.params['C(Hour, Treatment(reference="1"))[T.3]']
+    hour_4 = model.params['C(Hour, Treatment(reference="1"))[T.4]']
+    hour_5 = model.params['C(Hour, Treatment(reference="1"))[T.5]']
+    hour_6 = model.params['C(Hour, Treatment(reference="1"))[T.6]']
+    hour_7 = model.params['C(Hour, Treatment(reference="1"))[T.7]']
+    hour_8 = model.params['C(Hour, Treatment(reference="1"))[T.8]']
+    hour_9 = model.params['C(Hour, Treatment(reference="1"))[T.9]']
+    hour_10 = model.params['C(Hour, Treatment(reference="1"))[T.10]']
+    hour_11 = model.params['C(Hour, Treatment(reference="1"))[T.11]']
+    hour_12 = model.params['C(Hour, Treatment(reference="1"))[T.12]']
+    hour_13 = model.params['C(Hour, Treatment(reference="1"))[T.13]']
+    hour_14 = model.params['C(Hour, Treatment(reference="1"))[T.14]']
+    hour_15 = model.params['C(Hour, Treatment(reference="1"))[T.15]']
+    hour_16 = model.params['C(Hour, Treatment(reference="1"))[T.16]']
+    hour_17 = model.params['C(Hour, Treatment(reference="1"))[T.17]']
+    hour_16 = model.params['C(Hour, Treatment(reference="1"))[T.16]']
+    hour_18 = model.params['C(Hour, Treatment(reference="1"))[T.18]']
+    hour_19 = model.params['C(Hour, Treatment(reference="1"))[T.19]']
+    hour_20 = model.params['C(Hour, Treatment(reference="1"))[T.20]']
+    hour_21 = model.params['C(Hour, Treatment(reference="1"))[T.21]']
+    hour_22 = model.params['C(Hour, Treatment(reference="1"))[T.22]']
+    hour_23 = model.params['C(Hour, Treatment(reference="1"))[T.23]']
+    hour_24 = model.params['C(Hour, Treatment(reference="1"))[T.24]']
+    hour_list = [hour_1, float(hour_2), float(hour_3), float(hour_4), float(hour_5), float(hour_6), float(hour_7),
+                 float(hour_8), float(hour_9), float(hour_10),
+                 float(hour_11), float(hour_12), float(hour_13), float(hour_14), float(hour_15), float(hour_16),
+                 float(hour_17), float(hour_18), float(hour_19), float(hour_20),
+                 float(hour_21), float(hour_22), float(hour_23), float(hour_24)]
+
+    hours = list(range(1, 25))
+    temp_range = np.linspace(-20, 30, 200)
+    temp_effect = beta_2 * temp_range + beta_3 * temp_range ** 2 + beta_4 * temp_range ** 3
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(temp_range, temp_effect, color='green', linewidth=2)
+    plt.axhline(0, color='black', linestyle='--')
+    plt.xlabel('Temperatur (°C)')
+    plt.ylabel('Kalkulert effekt (kWh)')
+    plt.title('Effekt av Temperatur24 basert på beta-ene')
+    plt.grid(True)
+    plt.show()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(hours, hour_list, color='green', linewidth=2)
+    plt.axhline(0, color='black', linestyle='--')
+    plt.xlabel('Timer')
+    plt.ylabel('Beta-verdier for hver time')
+    plt.title('Betaene til hver time mot timer i døgnet')
+    plt.grid(True)
+    plt.show()
+
+    avg_hour_demand = total_hour_demand.groupby('Hour')['Demand_kWh'].mean()
+    intercept = model.params['Intercept']
+
+    hour_list_1 = [intercept]
+    for h in range(2, 25):
+        param_name = f'C(Hour, Treatment(reference= \"1\"))[T.{h}]'
+        if param_name in model.params:
+            hour_list_1.append(intercept + model.params[param_name])
+        else:
+            hour_list_1.append(intercept)
+
+    hours_3 = list(range(1, 25))
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(hours_3, avg_hour_demand, color='green', linewidth=2)
+    plt.axhline(0, color='black', linestyle='--')
+    plt.xlabel('Timer')
+    plt.ylabel('Beta-verdier/ forbruk')
+    plt.title('Betaene til hver time mot timer i døgnet')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
 
 #-----------------------------------------------------------------------------------
 
