@@ -8,7 +8,8 @@ import row
 
 import statsmodels.api as sm
 import patsy
-import mplcursors
+import seaborn as sns
+from pandas import to_datetime
 
 # -------------------------------------- LESER DATA --------------------------------------#
 
@@ -29,7 +30,7 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [4, 1, 2]   and    # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
+                rad["Q_City"] in [4, 1, 2]  and   # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
                 #rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
                 #rad["Q23"] == 9         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 #rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
@@ -39,7 +40,8 @@ def finne_husstander():
                 #rad["Q29"] == 1        # 1 = Ja, 2 = Nei
                 #rad["Q8_12"] == 0
                 #rad["Q7"] == 3
-                rad["Q29"] == 2
+                #rad["Q29"] == 2
+                rad["Q8_13"] == 1
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
@@ -65,8 +67,8 @@ finne_husstander()
                                                              + Temperatur72 + Hour_i + Month + Hour_i * Temperatur72 + error'''
 
 def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
-    start_dato = '2021-09-01'
-    end_dato ='2022-03-31'
+    start_dato = '2020-09-01'
+    end_dato ='2021-03-31'
 
     # Gjennomsnits demand per dag for alle ID-ene:
     data_demand['Date'] = pd.to_datetime(data_demand['Date'])
@@ -115,7 +117,7 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.width', None)
     pd.set_option('display.max_rows', None)
-    #print(df)
+    print(df)
 
     # Beregninger:
     df['Hour'] = df['Hour'].astype(str)
@@ -145,7 +147,7 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
     print(model.summary())
 
     # plott:
-    beta_2 = model.params['Temperatur24']
+    '''beta_2 = model.params['Temperatur24']
     beta_3 = model.params['I(Temperatur24 ** 2)']
     beta_4 = model.params['I(Temperatur24 ** 3)']
 
@@ -221,11 +223,7 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
     plt.title('Betaene til hver time mot timer i døgnet')
     plt.grid(True)
     plt.legend()
-    plt.show()
-
-
-
-
+    plt.show()'''
 
 # -----------------------------------------------------------------------------------
 '''Regresjon for log-lin/ lin-log: 
@@ -396,7 +394,7 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
     print(model.summary())
 
     # plott:
-    beta_2 = model.params['Temperatur24']
+    '''beta_2 = model.params['Temperatur24']
     beta_3 = model.params['I(Temperatur24 ** 2)']
     beta_4 = model.params['I(Temperatur24 ** 3)']
 
@@ -474,7 +472,7 @@ def log_lin_prisfolsomhet_t4t(liste_husstander,data_demand,data_price_update,dat
     plt.title('Betaene til hver time mot timer i døgnet')
     plt.grid(True)
     plt.legend()
-    plt.show()
+    plt.show()'''
 
 #-----------------------------------------------------------------------------------
 
@@ -562,11 +560,145 @@ def log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, 
 
 
 #-----------------------------------------------------------------------------------
+''' Regresjon med pris som kategorisk variabler: '''
+
+def ref_priskategori(data_price_update, start_dato, price_area):
+    ref_dato = pd.to_datetime(start_dato)
+
+    price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
+    price_data['Date'] = pd.to_datetime(price_data['Date'])
+    price_data['Hour'] = price_data['Hour'].astype(int)
+
+    before_ref = price_data[price_data['Date'] < ref_dato].copy()
+
+    return before_ref['Price_NOK_kWh']
+
+def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+    start_dato = '2021-09-01'
+    end_dato = '2022-03-31'
+
+    # Gjennomsnits demand per dag for alle ID-ene:
+    data_demand['Date'] = pd.to_datetime(data_demand['Date'])
+    data_demand['Hour'] = data_demand['Hour'].astype(int)
+    demand_data_filtered = data_demand[(data_demand['ID'].isin(liste_husstander)) &
+                                       (data_demand['Date'] >= start_dato) &
+                                       (data_demand['Date'] <= end_dato)].copy()
+
+    total_hour_demand = demand_data_filtered.groupby(['Date', 'Hour'])['Demand_kWh'].sum().reset_index()
+
+    # Gjennosnits prisen:
+    price_area = data_households[data_households['ID'].isin(liste_husstander)].iloc[0]['Price_area']
+    price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
+    price_data['Date'] = pd.to_datetime(price_data['Date'])
+    price_data['Hour'] = price_data['Hour'].astype(int)
+    price_filtered = price_data[(price_data['Date'] >= start_dato) & (price_data['Date'] <= end_dato)]
+    price_filtered.loc[:, 'Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(
+        lambda x: x if x > 0 else 0.01)  # Dette skal fikset prisen, om den er negativ
+
+    # Gjennomsnits temoperatur:
+    Blindern_Temp_t4t['Date'] = pd.to_datetime(Blindern_Temp_t4t['Date'])
+    Blindern_Temp_t4t['Hour'] = Blindern_Temp_t4t['Hour'].astype(int)
+
+    Blindern_Temp_t4t['Temperatur24'] = Blindern_Temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
+    Blindern_Temp_t4t['Temperatur72'] = Blindern_Temp_t4t['Temperatur'].rolling(window=72, min_periods=1).mean()
+
+    temp_filtered = Blindern_Temp_t4t[
+        (Blindern_Temp_t4t['Date'] >= start_dato) & (Blindern_Temp_t4t['Date'] <= end_dato)]
+
+    # Merge:
+    merged_1 = pd.merge(total_hour_demand, price_filtered, on=['Date', 'Hour'])
+    merged = pd.merge(merged_1, temp_filtered, on=['Date', 'Hour'])
+
+    filtered = merged[(merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0) & (
+        merged['Temperatur'].notnull())].copy()
+
+    df = pd.DataFrame(filtered)
+
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Month'] = df['Date'].dt.month
+    df['Month'] = df['Date'].dt.strftime('%B')
+
+
+    # Beregninger:
+    df['Hour'] = df['Hour'].astype(str)
+    df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+                                                        '11', '12', '13', '14', '15', '16', '17', '18', '19',
+                                                        '20', '21', '22', '23', '24'], ordered=True)
+
+    df['Month'] = pd.Categorical(df['Month'], categories=['January', 'February', 'March', 'April', 'May', 'June',
+                                                          'July', 'August', 'September', 'October', 'November',
+                                                          'December'], ordered=True)
+
+    before_ref = ref_priskategori(data_price_update, start_dato = start_dato, price_area = 'NO1')
+    ref_price = np.mean(before_ref)
+
+
+    df['Price_Group'] = pd.cut(df['Price_NOK_kWh'], bins = [0, 0.12, 0.55, 1.77, 6.54], labels = ['Low', 'Medium', 'High', 'Very High'], include_lowest=True)
+    df['Price_Group'] = df['Price_Group'].cat.add_categories(['Before_ref'])
+    df.loc[df['Price_NOK_kWh'] < ref_price, 'Price_Group'] = 'Before_ref'
+
+    #pd.set_option('display.max_colwidth', None)
+    #pd.set_option('display.width', None)
+    #pd.set_option('display.max_rows', None)
+    #print(combined_df.head(10))
+
+    y, X = patsy.dmatrices('Demand_kWh ~ C(Price_Group, Treatment(reference = "Before_ref")) + Temperatur24 + '
+                           'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
+                           'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "September")) + '
+                           'C(Hour, Treatment(reference="1")) * Temperatur72',
+                           data=df, return_type='dataframe', NA_action='drop')
+
+    model = sm.OLS(y, X).fit()
+    print(model.summary())
+
+    '''# Plot:
+    sns.set(style="whitegrid")
+
+    plt.figure(figsize=(8, 6))
+    sns.boxplot(x='Price_Group', y='Demand_kWh', data=df, palette='Set2')
+    plt.title('Fordeling av etterspørsel (kWh) per priskategori', fontsize=14)
+    plt.xlabel('Priskategori', fontsize=12)
+    plt.ylabel('Etterspørsel (kWh)', fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+    avg_demand = df.groupby(['Hour', 'Price_Group'])['Demand_kWh'].mean().reset_index()
+
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(x='Hour', y='Demand_kWh', hue='Price_Group', data=avg_demand, marker='o')
+    plt.title('Gjennomsnittlig etterspørsel per time for hver priskategori', fontsize=14)
+    plt.xlabel('Time på døgnet', fontsize=12)
+    plt.ylabel('Gjennomsnittlig etterspørsel (kWh)', fontsize=12)
+    plt.legend(title='Priskategori')
+    plt.tight_layout()
+    plt.show()
+
+
+    beta_2 = model.params['C(Price_Group, Treatment(reference="Medium"))[T.Low]']
+    beta_3 = model.params['C(Price_Group, Treatment(reference="Medium"))[T.High]']
+    beta_4 = model.params['C(Price_Group, Treatment(reference="Medium"))[T.Very High]']
+    temp_range = np.linspace(-20, 30, 200)
+    temp_effect = beta_2 * temp_range + beta_3 * temp_range ** 2 + beta_4 * temp_range ** 3
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(temp_range, temp_effect, color='green', linewidth=2)
+    plt.axhline(0, color='black', linestyle='--')
+    plt.xlabel('Temperatur (°C)')
+    plt.ylabel('Pris som kategorisert (NOK)')
+    plt.title('Betaene til pris-kategoriene mot temperatur')
+    plt.grid(True)
+    plt.show()'''
+
+#-----------------------------------------------------------------------------------
 
 '''Kjøre funksjonene, printer ut resultatene '''
 
-resultater = direkte_prisfolsomhet_time(liste_husstander,data_demand,data_price_update,data_households,Blindern_Temp_t4t)
+#resultater = direkte_prisfolsomhet_time(liste_husstander,data_demand,data_price_update,data_households,Blindern_Temp_t4t)
 #resultater = lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+resultater = pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+#print(ref_priskategori(data_price_update, start_dato = '2021-09-01', price_area='NO1'))
+
+
 
