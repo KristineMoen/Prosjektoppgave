@@ -31,7 +31,7 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [4, 1, 2]  and   # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
+                rad["Q_City"] in [4, 1, 2]     # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
                 #rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
                 #rad["Q23"] == 9         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 #rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
@@ -42,7 +42,7 @@ def finne_husstander():
                 #rad["Q8_12"] == 0
                 #rad["Q7"] == 3
                 #rad["Q29"] == 2
-                rad["Q8_13"] == 1
+                #rad["Q8_13"] == 1
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
@@ -571,9 +571,8 @@ def ref_priskategori(data_price_update, start_dato, price_area):
     price_data['Hour'] = price_data['Hour'].astype(int)
 
     before_ref = price_data[price_data['Date'] < ref_dato].copy()
-    before_ref['Before_ref'] = before_ref['Price_NOK_kWh']
 
-    return before_ref['Before_ref']
+    return before_ref['Price_NOK_kWh'].tolist()
 
 def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-09-01'
@@ -607,7 +606,56 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
     temp_filtered = Blindern_Temp_t4t[
         (Blindern_Temp_t4t['Date'] >= start_dato) & (Blindern_Temp_t4t['Date'] <= end_dato)]
 
-    before_ref_df = ref_priskategori(data_price_update, start_dato=start_dato, price_area='NO1')
+    Before_ref = ref_priskategori(data_price_update, start_dato=start_dato, price_area='NO1')
+
+    merged_1 = pd.merge(total_hour_demand, price_filtered, on=['Date', 'Hour'])
+    merged = pd.merge(merged_1, temp_filtered, on=['Date', 'Hour'])
+
+    filtered = merged[(merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0) & (
+        merged['Temperatur'].notnull())].copy()
+
+    df = pd.DataFrame(filtered)
+
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Month'] = df['Date'].dt.month
+    df['Month'] = df['Date'].dt.strftime('%B')
+
+    # Beregninger:
+    df['Hour'] = df['Hour'].astype(str)
+    df['Hour'] = pd.Categorical(df['Hour'], categories=['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+                                                        '11', '12', '13', '14', '15', '16', '17', '18', '19',
+                                                        '20', '21', '22', '23', '24'], ordered=True)
+
+    df['Month'] = pd.Categorical(df['Month'], categories=['January', 'February', 'March', 'April', 'May', 'June',
+                                                          'July', 'August', 'September', 'October', 'November',
+                                                          'December'], ordered=True)
+
+    df['Price_Group'] = pd.cut(df['Price_NOK_kWh'],
+                               bins = [0, 0.12, 0.55, 1.77, 6.54],
+                               labels = ['Low', 'Medium', 'High', 'Very High'],
+                               include_lowest=True)
+
+    #df.loc[df['Price_NOK_kWh'].isin(Before_ref), 'Price_Group'] = 'Before_ref'
+    #df['Price_Group'] = pd.Categorical(df['Price_Group'], categories = ['Before_ref', 'Low', 'Medium', 'High', 'Very high'], ordered = True)
+
+    #Before_ref_cat = pd.Categorical(Before_ref, categories=['Before_ref'], ordered = True)
+    #df['Price_Group'] = df['Price_NOK_kWh'].cat.add_categories(['Before_ref'])
+
+
+    #print(df['Price_Group'].value_counts())
+    #print(df['Price_Group'].isna().sum())
+
+    y, X = patsy.dmatrices('Demand_kWh ~ C(Price_Group, Treatment(reference = "Low")) + Temperatur24 + '
+                           'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
+                           'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference = "September")) + '
+                           'C(Hour, Treatment(reference="1")) * Temperatur72',
+                           data=df, return_type='dataframe', NA_action='drop')
+
+    model = sm.OLS(y, X).fit()
+    print(model.summary())
+
+    '''before_ref_df = ref_priskategori(data_price_update, start_dato=start_dato, price_area='NO1')
+
     combined_price = pd.concat([before_ref_df, price_filtered], ignore_index=True)
 
     combined_price['Price_Group'] = pd.cut(combined_price['Price_NOK_kWh'], bins=[0, 0.12, 0.55, 1.77, 6.54],
@@ -615,12 +663,12 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
     combined_price['Price_Group'] = pd.Categorical(combined_price['Price_Group'],
                                                    categories=['Before_ref', 'Low', 'Medium', 'High', 'Very High'])
 
-    '''combined_price.loc[combined_price['Price_Group'] != 'Before_ref', 'Price_Group'] = pd.cut(combined_price.loc[combined_price['Price_Group'] != 'Before_ref',
+    combined_price.loc[combined_price['Price_Group'] != 'Before_ref', 'Price_Group'] = pd.cut(combined_price.loc[combined_price['Price_Group'] != 'Before_ref',
                                                                                                 'Price_NOK_kWh'],
                                                                                                 bins = [0,0.12,0.55,1.77,6.54],
                                                                                                 labels = ['Low','Medium', 'High', 'Very high'],
                                                                                                 include_lowest=True)
-    combined_price['Price_Group'] = pd.Categorical(combined_price['Price_Group'], categories = ['Before_ref', 'Low', 'Medium', 'High', 'Very high'])'''
+    combined_price['Price_Group'] = pd.Categorical(combined_price['Price_Group'], categories = ['Before_ref', 'Low', 'Medium', 'High', 'Very high'])
 
     # Merge:
     merged_1 = pd.merge(total_hour_demand, combined_price, on=['Date', 'Hour'])
@@ -660,7 +708,7 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
                            data=df, return_type='dataframe', NA_action='drop')
 
     model = sm.OLS(y, X).fit()
-    print(model.summary())
+    print(model.summary())'''
 
     # Plot:
     # -------- Boksplott over priskategoriene --------- #
@@ -770,9 +818,94 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
 #resultater = lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
-print(ref_priskategori(data_price_update, start_dato = '2021-09-01', price_area='NO1'))
+#print(ref_priskategori(data_price_update, start_dato = '2021-09-01', price_area='NO1'))
 resultater = pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
 
 
 
+def pris_kategorisk_2(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+    # Definer perioder
+    ref_start = '2019-07-01'  # Start for referanseperiode
+    start_dato = '2021-09-01'
+    end_dato = '2022-03-31'
+
+    # --- Demand-data ---
+    data_demand['Date'] = pd.to_datetime(data_demand['Date'])
+    data_demand['Hour'] = data_demand['Hour'].astype(int)
+
+    # Inkluder både referanseperiode og analyseperiode
+    demand_data_filtered = data_demand[(data_demand['ID'].isin(liste_husstander)) &
+                                       (data_demand['Date'] >= ref_start) &
+                                       (data_demand['Date'] <= end_dato)].copy()
+
+    total_hour_demand = demand_data_filtered.groupby(['Date', 'Hour'])['Demand_kWh'].sum().reset_index()
+
+    # --- Prisdata ---
+    price_area = data_households[data_households['ID'].isin(liste_husstander)].iloc[0]['Price_area']
+    price_data = data_price_update[data_price_update['Price_area'] == price_area].copy()
+    price_data['Date'] = pd.to_datetime(price_data['Date'])
+    price_data['Hour'] = price_data['Hour'].astype(int)
+
+    price_filtered = price_data[(price_data['Date'] >= ref_start) & (price_data['Date'] <= end_dato)]
+    price_filtered = price_filtered.copy()
+    price_filtered['Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(lambda x: x if x > 0 else 0.01)
+
+    # --- Temperaturdata ---
+    Blindern_Temp_t4t['Date'] = pd.to_datetime(Blindern_Temp_t4t['Date'])
+    Blindern_Temp_t4t['Hour'] = Blindern_Temp_t4t['Hour'].astype(int)
+    Blindern_Temp_t4t['Temperatur24'] = Blindern_Temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
+    Blindern_Temp_t4t['Temperatur72'] = Blindern_Temp_t4t['Temperatur'].rolling(window=72, min_periods=1).mean()
+
+    temp_filtered = Blindern_Temp_t4t[(Blindern_Temp_t4t['Date'] >= ref_start) &
+                                      (Blindern_Temp_t4t['Date'] <= end_dato)]
+
+    # --- Merge alle data ---
+    merged_1 = pd.merge(total_hour_demand, price_filtered, on=['Date', 'Hour'])
+    merged = pd.merge(merged_1, temp_filtered, on=['Date', 'Hour'])
+
+    filtered = merged[(merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0) &
+                      (merged['Temperatur'].notnull())].copy()
+
+    df = pd.DataFrame(filtered)
+
+    # --- Kategorisering ---
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Month'] = df['Date'].dt.strftime('%B')
+
+    df['Hour'] = pd.Categorical(df['Hour'].astype(str),
+        categories=[str(i) for i in range(1, 25)], ordered=True)
+    df['Month'] = pd.Categorical(df['Month'],
+        categories=['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'],
+        ordered=True)
+
+    # Sett Price_Group: Before_ref for datoer før start_dato, ellers basert på pris
+
+    df['Price_Group'] = np.where(df['Date'] < pd.to_datetime(start_dato), 'Before_ref', pd.cut(df['Price_NOK_kWh'],
+               bins=[0, 0.12, 0.55, 1.77, 6.54],
+               labels=['Low', 'Medium', 'High', 'Very High'],
+               include_lowest=True)
+    )
+
+    # Sett kategoriene og rekkefølge
+    df['Price_Group'] = pd.Categorical(df['Price_Group'],
+                                       categories=['Before_ref', 'Low', 'Medium', 'High', 'Very High'],
+                                       ordered = True)
+
+    print(df['Price_Group'].value_counts())
+
+
+    # --- Modell ---
+    y, X = patsy.dmatrices('Demand_kWh ~ C(Price_Group, Treatment(reference="Before_ref")) + Temperatur24 + '
+                           'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
+                           'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference="September"))',
+                           data=df, return_type='dataframe', NA_action='drop')
+
+    model = sm.OLS(y, X).fit()
+    print(model.summary())
+
+    return df
+
+
+#print(pris_kategorisk_2(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t))
