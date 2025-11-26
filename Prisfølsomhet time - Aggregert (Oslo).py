@@ -2,6 +2,7 @@ from unittest import result
 
 import numpy as np
 import pandas as pd
+import math
 import matplotlib.pyplot as plt
 import csv
 import row
@@ -147,7 +148,7 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
     print(model.summary())
 
     # plott:
-    '''beta_2 = model.params['Temperatur24']
+    beta_2 = model.params['Temperatur24']
     beta_3 = model.params['I(Temperatur24 ** 2)']
     beta_4 = model.params['I(Temperatur24 ** 3)']
 
@@ -223,7 +224,7 @@ def direkte_prisfolsomhet_time(liste_husstander, data_demand, data_price_update,
     plt.title('Betaene til hver time mot timer i døgnet')
     plt.grid(True)
     plt.legend()
-    plt.show()'''
+    plt.show()
 
 # -----------------------------------------------------------------------------------
 '''Regresjon for log-lin/ lin-log: 
@@ -570,8 +571,9 @@ def ref_priskategori(data_price_update, start_dato, price_area):
     price_data['Hour'] = price_data['Hour'].astype(int)
 
     before_ref = price_data[price_data['Date'] < ref_dato].copy()
+    before_ref['Before_ref'] = before_ref['Price_NOK_kWh']
 
-    return before_ref['Price_NOK_kWh']
+    return before_ref['Before_ref']
 
 def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     start_dato = '2021-09-01'
@@ -605,8 +607,23 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
     temp_filtered = Blindern_Temp_t4t[
         (Blindern_Temp_t4t['Date'] >= start_dato) & (Blindern_Temp_t4t['Date'] <= end_dato)]
 
+    before_ref_df = ref_priskategori(data_price_update, start_dato=start_dato, price_area='NO1')
+    combined_price = pd.concat([before_ref_df, price_filtered], ignore_index=True)
+
+    combined_price['Price_Group'] = pd.cut(combined_price['Price_NOK_kWh'], bins=[0, 0.12, 0.55, 1.77, 6.54],
+                                           labels=['Low', 'Medium', 'High', 'Very High'], include_lowest=True)
+    combined_price['Price_Group'] = pd.Categorical(combined_price['Price_Group'],
+                                                   categories=['Before_ref', 'Low', 'Medium', 'High', 'Very High'])
+
+    '''combined_price.loc[combined_price['Price_Group'] != 'Before_ref', 'Price_Group'] = pd.cut(combined_price.loc[combined_price['Price_Group'] != 'Before_ref',
+                                                                                                'Price_NOK_kWh'],
+                                                                                                bins = [0,0.12,0.55,1.77,6.54],
+                                                                                                labels = ['Low','Medium', 'High', 'Very high'],
+                                                                                                include_lowest=True)
+    combined_price['Price_Group'] = pd.Categorical(combined_price['Price_Group'], categories = ['Before_ref', 'Low', 'Medium', 'High', 'Very high'])'''
+
     # Merge:
-    merged_1 = pd.merge(total_hour_demand, price_filtered, on=['Date', 'Hour'])
+    merged_1 = pd.merge(total_hour_demand, combined_price, on=['Date', 'Hour'])
     merged = pd.merge(merged_1, temp_filtered, on=['Date', 'Hour'])
 
     filtered = merged[(merged['Demand_kWh'] > 0) & (merged['Price_NOK_kWh'] > 0) & (
@@ -629,18 +646,12 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
                                                           'July', 'August', 'September', 'October', 'November',
                                                           'December'], ordered=True)
 
-    before_ref = ref_priskategori(data_price_update, start_dato = start_dato, price_area = 'NO1')
-    ref_price = np.mean(before_ref)
+    #df['Price_Group'] = pd.cut(df['Price_NOK_kWh'], bins = [0, 0.12, 0.55, 1.77, 6.54], labels = ['Low', 'Medium', 'High', 'Very High'], include_lowest=True)
+    df['Price_Group'] = df.apply(lambda row: 'Before_ref' if row['Price_NOK_kWh'] in before_ref_df else row['Price_Group'], axis = 1)
+    #df['Price_Group'] = pd.Categorical(df['Price_Group'], categories=['Before_ref', 'Low', 'Medium', 'High', 'Very high'], ordered = False)
 
-
-    df['Price_Group'] = pd.cut(df['Price_NOK_kWh'], bins = [0, 0.12, 0.55, 1.77, 6.54], labels = ['Low', 'Medium', 'High', 'Very High'], include_lowest=True)
-    df['Price_Group'] = df['Price_Group'].cat.add_categories(['Before_ref'])
-    df.loc[df['Price_NOK_kWh'] < ref_price, 'Price_Group'] = 'Before_ref'
-
-    #pd.set_option('display.max_colwidth', None)
-    #pd.set_option('display.width', None)
-    #pd.set_option('display.max_rows', None)
-    #print(combined_df.head(10))
+    #print(combined_price)
+    print(df['Price_Group'].value_counts())
 
     y, X = patsy.dmatrices('Demand_kWh ~ C(Price_Group, Treatment(reference = "Before_ref")) + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
@@ -651,32 +662,24 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
     model = sm.OLS(y, X).fit()
     print(model.summary())
 
-    '''# Plot:
-    sns.set(style="whitegrid")
+    # Plot:
+    # -------- Boksplott over priskategoriene --------- #
+    '''sns.set(style="whitegrid")
 
     plt.figure(figsize=(8, 6))
-    sns.boxplot(x='Price_Group', y='Demand_kWh', data=df, palette='Set2')
+    sns.boxplot(x='Price_Group', y='Demand_kWh', data=df, hue = 'Price_Group', palette='Set2', legend = False)
     plt.title('Fordeling av etterspørsel (kWh) per priskategori', fontsize=14)
     plt.xlabel('Priskategori', fontsize=12)
     plt.ylabel('Etterspørsel (kWh)', fontsize=12)
     plt.tight_layout()
     plt.show()
 
-    avg_demand = df.groupby(['Hour', 'Price_Group'])['Demand_kWh'].mean().reset_index()
+    # ----------- Plott over hvordan etterspørselen endres med temperatur --------- #
 
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(x='Hour', y='Demand_kWh', hue='Price_Group', data=avg_demand, marker='o')
-    plt.title('Gjennomsnittlig etterspørsel per time for hver priskategori', fontsize=14)
-    plt.xlabel('Time på døgnet', fontsize=12)
-    plt.ylabel('Gjennomsnittlig etterspørsel (kWh)', fontsize=12)
-    plt.legend(title='Priskategori')
-    plt.tight_layout()
-    plt.show()
+    beta_2 = model.params['Temperatur24']
+    beta_3 = model.params['I(Temperatur24 ** 2)']
+    beta_4 = model.params['I(Temperatur24 ** 3)']
 
-
-    beta_2 = model.params['C(Price_Group, Treatment(reference="Medium"))[T.Low]']
-    beta_3 = model.params['C(Price_Group, Treatment(reference="Medium"))[T.High]']
-    beta_4 = model.params['C(Price_Group, Treatment(reference="Medium"))[T.Very High]']
     temp_range = np.linspace(-20, 30, 200)
     temp_effect = beta_2 * temp_range + beta_3 * temp_range ** 2 + beta_4 * temp_range ** 3
 
@@ -684,10 +687,80 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
     plt.plot(temp_range, temp_effect, color='green', linewidth=2)
     plt.axhline(0, color='black', linestyle='--')
     plt.xlabel('Temperatur (°C)')
-    plt.ylabel('Pris som kategorisert (NOK)')
-    plt.title('Betaene til pris-kategoriene mot temperatur')
+    plt.ylabel('Kalkulert effekt (kWh)')
+    plt.title('Effekt av Temperatur24 basert på beta-ene')
     plt.grid(True)
+    plt.show()
+
+    # ---------- PLott over effekten av timervariabelen (Hour), viser hvordan etterspørselen endres gjennom døgnet relativt til time 1 --------- #
+
+    hours = list(range(1, 25))
+
+    hour_1 = 0
+    hour_2 = model.params['C(Hour, Treatment(reference="1"))[T.2]']
+    hour_3 = model.params['C(Hour, Treatment(reference="1"))[T.3]']
+    hour_4 = model.params['C(Hour, Treatment(reference="1"))[T.4]']
+    hour_5 = model.params['C(Hour, Treatment(reference="1"))[T.5]']
+    hour_6 = model.params['C(Hour, Treatment(reference="1"))[T.6]']
+    hour_7 = model.params['C(Hour, Treatment(reference="1"))[T.7]']
+    hour_8 = model.params['C(Hour, Treatment(reference="1"))[T.8]']
+    hour_9 = model.params['C(Hour, Treatment(reference="1"))[T.9]']
+    hour_10 = model.params['C(Hour, Treatment(reference="1"))[T.10]']
+    hour_11 = model.params['C(Hour, Treatment(reference="1"))[T.11]']
+    hour_12 = model.params['C(Hour, Treatment(reference="1"))[T.12]']
+    hour_13 = model.params['C(Hour, Treatment(reference="1"))[T.13]']
+    hour_14 = model.params['C(Hour, Treatment(reference="1"))[T.14]']
+    hour_15 = model.params['C(Hour, Treatment(reference="1"))[T.15]']
+    hour_16 = model.params['C(Hour, Treatment(reference="1"))[T.16]']
+    hour_17 = model.params['C(Hour, Treatment(reference="1"))[T.17]']
+    hour_16 = model.params['C(Hour, Treatment(reference="1"))[T.16]']
+    hour_18 = model.params['C(Hour, Treatment(reference="1"))[T.18]']
+    hour_19 = model.params['C(Hour, Treatment(reference="1"))[T.19]']
+    hour_20 = model.params['C(Hour, Treatment(reference="1"))[T.20]']
+    hour_21 = model.params['C(Hour, Treatment(reference="1"))[T.21]']
+    hour_22 = model.params['C(Hour, Treatment(reference="1"))[T.22]']
+    hour_23 = model.params['C(Hour, Treatment(reference="1"))[T.23]']
+    hour_24 = model.params['C(Hour, Treatment(reference="1"))[T.24]']
+    hour_list = [hour_1, float(hour_2), float(hour_3), float(hour_4), float(hour_5), float(hour_6), float(hour_7), float(hour_8), float(hour_9), float(hour_10),
+                 float(hour_11), float(hour_12), float(hour_13), float(hour_14), float(hour_15), float(hour_16), float(hour_17), float(hour_18), float(hour_19), float(hour_20),
+                 float(hour_21), float(hour_22), float(hour_23), float(hour_24)]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(hours, hour_list, color='green', linewidth=2)
+    plt.axhline(0, color='black', linestyle='--')
+    plt.xlabel('Timer')
+    plt.ylabel('Beta-verdier for hver time')
+    plt.title('Betaene til hver time mot timer i døgnet')
+    plt.grid(True)
+    plt.show()
+
+    # ------ Plott over gjennomsnittet forbruk over de ulike timene i døgnet ------------ #
+
+    avg_hour_demand = total_hour_demand.groupby('Hour')['Demand_kWh'].mean()
+    intercept = model.params['Intercept']
+
+    hour_list_1 = [intercept]
+    for h in range(2,25):
+        param_name = f'C(Hour, Treatment(reference= \"1\"))[T.{h}]'
+        if param_name in model.params:
+            hour_list_1.append(intercept + model.params[param_name])
+        else:
+            hour_list_1.append(intercept)
+
+    hours_3 = list(range(1,25))
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(hours_3, avg_hour_demand, color='green', linewidth=2, label = 'Gjennomsnitt')
+    plt.plot(hours_3, hour_list_1, color = 'blue', linewidth = 2, linestyle = '--', label = 'Modellpredikasjon')
+    plt.axhline(0, color='black', linestyle='--')
+    plt.xlabel('Timer')
+    plt.ylabel('Etterspørsel (kWh)')
+    plt.title('Gjennomsnitt vs modellpredikert forbruk per time')
+    plt.grid(True)
+    plt.legend()
     plt.show()'''
+
+
 
 #-----------------------------------------------------------------------------------
 
@@ -697,8 +770,9 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
 #resultater = lin_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_lin_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+print(ref_priskategori(data_price_update, start_dato = '2021-09-01', price_area='NO1'))
 resultater = pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
-#print(ref_priskategori(data_price_update, start_dato = '2021-09-01', price_area='NO1'))
+
 
 
 
