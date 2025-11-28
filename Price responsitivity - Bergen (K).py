@@ -242,4 +242,4 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     plt.show()
 
 
-print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t))
+print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Bergen_Temp_t4t))
