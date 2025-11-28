@@ -36,12 +36,13 @@ def finne_husstander():
                 # rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
                 # rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
                 # rad["Q1"] == 1          # 1 = Fulgte med på egen strømbruk, 2 = følgte ikke med
-                # rad['Q4'] == 4
+                # rad['Q4'] == 4         # 1 = Fulgte med hver dag, 2 = Fulgte med noen ganger i uken, 3 = Fulgte med noen ganger i mnd, 4 = Fulgte med noen ganger i løpet av vinteren
                 # rad["Q29"] == 1        # 1 = Ja, 2 = Nei
-                # rad["Q8_12"] == 0
-                # rad["Q7"] == 3
-                # rad["Q29"] == 2
-                # rad["Q8_13"] == 1
+                # rad["Q8_12"] == 0      # 0 = Flyttet ikke elbilladning til andre timer, 1 = flyttet elbilladning til andre timer
+                # rad["Q7"] == 3         # 1 = Gjorde ofte tiltak, 2 = Gjorde av og til tiltak, 3 = Nei
+                # rad["Q29"] == 2        # 1 = Har elbil, 2 = Har ikke elbil
+                # rad["Q8_13"] == 1      # 0 = Installerte ikke elbillader, 1 = Installerte elbillader
+                # rad["Q31"] == 1        # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
