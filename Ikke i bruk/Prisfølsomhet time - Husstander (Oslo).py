@@ -14,16 +14,16 @@ import mplcursors
 
 data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
 
-data_price = pd.read_csv('prices.csv')
+data_price = pd.read_csv('../prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
-Blindern_Temp_t4t = pd.read_csv('Blindern_temperatur_t4t.csv')
+Blindern_Temp_t4t = pd.read_csv('../Blindern_temperatur_t4t.csv')
 
 #------------------------------------- FINNE AKTUELLE HUSSTANDER -------------------------------------------#
 
 #Finne ID:
-data_answer = pd.read_csv('answers.csv')
-data_households = pd.read_csv('households (1).csv')
+data_answer = pd.read_csv('../answers.csv')
+data_households = pd.read_csv('../households (1).csv')
 liste_husstander = []
 
 def finne_husstander():

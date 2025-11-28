@@ -10,9 +10,9 @@ import statsmodels.api as sm
 import patsy
 import mplcursors
 
-data_demand = pd.read_csv('demand_areas (1).csv')
-Blindern_Temp_t4t = pd.read_csv('Blindern_temperatur_t4t.csv')
-data_price = pd.read_csv('prices.csv')
+data_demand = pd.read_csv('../demand_areas (1).csv')
+Blindern_Temp_t4t = pd.read_csv('../Blindern_temperatur_t4t.csv')
+data_price = pd.read_csv('../prices.csv')
 
 def prisfolsomhet_time(data_demand, data_price, Blindern_Temp_t4t):
     start_date = '2021-09-01'
