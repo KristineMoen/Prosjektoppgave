@@ -819,7 +819,7 @@ def pris_kategorisk(liste_husstander, data_demand, data_price_update, data_house
 #resultater = log_lin_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #resultater = log_log_prisfolsomhet_t4t(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 #print(ref_priskategori(data_price_update, start_dato = '2021-09-01', price_area='NO1'))
-resultater = pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
+#resultater = pris_kategorisk(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t)
 
 
 
@@ -897,7 +897,7 @@ def pris_kategorisk_2(liste_husstander, data_demand, data_price_update, data_hou
 
 
     # --- Modell ---
-    y, X = patsy.dmatrices('Demand_kWh ~ C(Price_Group, Treatment(reference="Before_ref")) + Temperatur24 + '
+    y, X = patsy.dmatrices('np.log(Demand_kWh) ~ C(Price_Group, Treatment(reference="Before_ref")) + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference="September"))',
                            data=df, return_type='dataframe', NA_action='drop')
@@ -905,7 +905,49 @@ def pris_kategorisk_2(liste_husstander, data_demand, data_price_update, data_hou
     model = sm.OLS(y, X).fit()
     print(model.summary())
 
+    hours = list(range(1, 25))
+
+    hour_1 = 0
+    hour_2 = model.params['C(Hour, Treatment(reference="1"))[T.2]']
+    hour_3 = model.params['C(Hour, Treatment(reference="1"))[T.3]']
+    hour_4 = model.params['C(Hour, Treatment(reference="1"))[T.4]']
+    hour_5 = model.params['C(Hour, Treatment(reference="1"))[T.5]']
+    hour_6 = model.params['C(Hour, Treatment(reference="1"))[T.6]']
+    hour_7 = model.params['C(Hour, Treatment(reference="1"))[T.7]']
+    hour_8 = model.params['C(Hour, Treatment(reference="1"))[T.8]']
+    hour_9 = model.params['C(Hour, Treatment(reference="1"))[T.9]']
+    hour_10 = model.params['C(Hour, Treatment(reference="1"))[T.10]']
+    hour_11 = model.params['C(Hour, Treatment(reference="1"))[T.11]']
+    hour_12 = model.params['C(Hour, Treatment(reference="1"))[T.12]']
+    hour_13 = model.params['C(Hour, Treatment(reference="1"))[T.13]']
+    hour_14 = model.params['C(Hour, Treatment(reference="1"))[T.14]']
+    hour_15 = model.params['C(Hour, Treatment(reference="1"))[T.15]']
+    hour_16 = model.params['C(Hour, Treatment(reference="1"))[T.16]']
+    hour_17 = model.params['C(Hour, Treatment(reference="1"))[T.17]']
+    hour_16 = model.params['C(Hour, Treatment(reference="1"))[T.16]']
+    hour_18 = model.params['C(Hour, Treatment(reference="1"))[T.18]']
+    hour_19 = model.params['C(Hour, Treatment(reference="1"))[T.19]']
+    hour_20 = model.params['C(Hour, Treatment(reference="1"))[T.20]']
+    hour_21 = model.params['C(Hour, Treatment(reference="1"))[T.21]']
+    hour_22 = model.params['C(Hour, Treatment(reference="1"))[T.22]']
+    hour_23 = model.params['C(Hour, Treatment(reference="1"))[T.23]']
+    hour_24 = model.params['C(Hour, Treatment(reference="1"))[T.24]']
+    hour_list = [hour_1, float(hour_2), float(hour_3), float(hour_4), float(hour_5), float(hour_6), float(hour_7),
+                 float(hour_8), float(hour_9), float(hour_10),
+                 float(hour_11), float(hour_12), float(hour_13), float(hour_14), float(hour_15), float(hour_16),
+                 float(hour_17), float(hour_18), float(hour_19), float(hour_20),
+                 float(hour_21), float(hour_22), float(hour_23), float(hour_24)]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(hours, hour_list, color='green', linewidth=2)
+    plt.axhline(0, color='black', linestyle='--')
+    plt.xlabel('Timer')
+    plt.ylabel('Beta-verdier for hver time')
+    plt.title('Betaene til hver time mot timer i døgnet')
+    plt.grid(True)
+    plt.show()
+
     return df
 
 
-#print(pris_kategorisk_2(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t))
+print(pris_kategorisk_2(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t))
