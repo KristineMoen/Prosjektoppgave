@@ -12,7 +12,7 @@ from pandas import to_datetime
 
 # -------------------------------------- LESER DATA --------------------------------------#
 
-data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
+data_demand = pd.read_csv('/Users/synnelefdal/Desktop/<3/5.klasse/demand.csv')
 
 data_price = pd.read_csv('prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
