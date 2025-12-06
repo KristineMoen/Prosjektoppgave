@@ -24,7 +24,7 @@ def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
                 rad["Q_City"] in [4, 1, 2]  # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
-                # rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
+                # rad["Q22"] == 4            # 1 = Enebolig 4 = Boligblokk
                 # rad["Q23"] == 9         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 # rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
                 # rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
