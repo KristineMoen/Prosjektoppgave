@@ -30,8 +30,8 @@ def finne_husstander():
                 # rad["Q8_12"] == 0      # 0 = Flyttet ikke elbilladning til andre timer, 1 = flyttet elbilladning til andre timer
                 # rad["Q7"] == 3         # 1 = Gjorde ofte tiltak, 2 = Gjorde av og til tiltak, 3 = Nei
                 rad["Q29"] == 1 and       # 1 = Har elbil, 2 = Har ikke elbil
-                rad["Q8_13"] == 1      # 0 = Installerte ikke elbillader, 1 = Installerte elbillader
-                #rad["Q31"] in [2,3,4]        # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
+                #rad["Q8_13"] == 1      # 0 = Installerte ikke elbillader, 1 = Installerte elbillader
+                rad["Q31"] in [2,3,4]        # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
 
         ):
 
