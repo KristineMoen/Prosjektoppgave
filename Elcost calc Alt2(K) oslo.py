@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 # DETTE E FORDELING AV GRUNNSTØTTE
-data_demand = pd.read_csv('/Users/synnelefdal/Desktop/<3/5.klasse/demand.csv')
+data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
 
 data_price = pd.read_csv('prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
@@ -19,9 +19,9 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [1,2,4]   # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
+                rad["Q_City"] in [1,2,4] and   # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
                 # rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
-                #rad["Q23"] in  [3]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
+                #rad["Q23"] in  [1,2,3]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 #rad["Q21"] in [1,2]         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
                 # rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
                 # rad["Q1"] == 1          # 1 = Fulgte med på egen strømbruk, 2 = følgte ikke med
@@ -29,8 +29,8 @@ def finne_husstander():
                 # rad["Q29"] == 1        # 1 = Ja, 2 = Nei
                 # rad["Q8_12"] == 0      # 0 = Flyttet ikke elbilladning til andre timer, 1 = flyttet elbilladning til andre timer
                 # rad["Q7"] == 3         # 1 = Gjorde ofte tiltak, 2 = Gjorde av og til tiltak, 3 = Nei
-                # rad["Q29"] == 1   and     # 1 = Har elbil, 2 = Har ikke elbil
-                # rad["Q8_13"] == 1      # 0 = Installerte ikke elbillader, 1 = Installerte elbillader
+                rad["Q29"] == 1 and       # 1 = Har elbil, 2 = Har ikke elbil
+                rad["Q8_13"] == 1      # 0 = Installerte ikke elbillader, 1 = Installerte elbillader
                 #rad["Q31"] in [2,3,4]        # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
 
         ):
