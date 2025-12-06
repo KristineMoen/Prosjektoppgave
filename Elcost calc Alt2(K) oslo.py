@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-
+# DETTE E FORDELING AV GRUNNSTØTTE
 data_demand = pd.read_csv('/Users/synnelefdal/Desktop/<3/5.klasse/demand.csv')
 
 data_price = pd.read_csv('prices.csv')
@@ -19,9 +19,9 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [5]  # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
+                rad["Q_City"] in [1,2,4]   # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
                 # rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
-                #rad["Q23"] in  [1,2,3]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
+                #rad["Q23"] in  [3]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 #rad["Q21"] in [1,2]         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
                 # rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
                 # rad["Q1"] == 1          # 1 = Fulgte med på egen strømbruk, 2 = følgte ikke med
@@ -93,6 +93,19 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         total_price = merged['Price'].sum()
 
         total_strømstøtte = merged['Price_strømstøtte'].sum()
+
+        #Regne ut og anta
+        P_akseptabelpris = 0.4 #NOK/kWh
+        E_egenandel_gjennomsnitt = P_akseptabelpris *   11317.676617  #dette e tatt fra kjøring av bare bergen household gjennomsnitt total demand
+        #E_egenandel = P_akseptabelpris * total_demand
+        #print('Utgift strøm',E_egenandel)
+        K =    12814.362665 #dette e og tatt fra bergen kjøring. tot pris uten støtte
+        støtte_p_pers= K - E_egenandel_gjennomsnitt
+        #print('Støtte p pers', støtte_p_pers)
+
+
+
+        #norgespris osv
         total_norgespris = total_demand * 0.4                                     #Regner ut hva strømmen hadde kostet med Norgespris
 
         diff_norgespris_og_ingen = total_price - total_norgespris
@@ -113,8 +126,10 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
             'Tot pris m/ Norgespris (NOK)': total_norgespris,    #Total pris med Norgespris som strømstøtte
             'Diff i NOK mellom Norgespris og ingen strømstøtte': diff_norgespris_og_ingen,         #Differansne mellom pris uten støtte og Norgespris
             'Diff i NOK mellom u/ støtte og m/ støtte': diff_u_støtte_og_m_støtte,                 #Differansen i uten støtte og med støtte
-            'Diff i NOK mellom Norgespris og strømstøtte' : diff_norgespris_og_strømstøtte         #Differansne i pris mellom norgespris og strømstøtte
+            'Diff i NOK mellom Norgespris og strømstøtte' : diff_norgespris_og_strømstøtte,         #Differansne i pris mellom norgespris og strømstøtte
             #'Type oppvarmin' : oppvarming
+            'Støtte alternativ 2' : støtte_p_pers,
+            'Strøm utgift alternativ 2' : total_price - støtte_p_pers
         })
         #pd.set_option("display.max_rows", None)
         #pd.set_option("display.max_columns", None)
