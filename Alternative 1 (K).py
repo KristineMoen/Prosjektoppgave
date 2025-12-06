@@ -53,7 +53,7 @@ finne_husstander()
 # ---------------------------------------------
 
 def beregn_alternative1(data_households, data_demand, data_price):
-    tak_kWh = 13000  #kWh
+    tak_kWh = 11317  #kWh
 
     start_dato = '2021-04-01'
     end_dato = '2022-03-31'
@@ -80,6 +80,8 @@ def beregn_alternative1(data_households, data_demand, data_price):
         merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']
 
         df = merged.copy()
+
+        total_price = df['Price'].sum()
 
         df["Date"] = pd.to_datetime(df["Date"])
         if "Hour" in df.columns:
@@ -111,7 +113,8 @@ def beregn_alternative1(data_households, data_demand, data_price):
             'Total Demand': total_demand,
             'fast_kWh': total_fast_kWh,
             'spot_kWh': total_spot_kWh,
-            'NOK total alternativ 1': df["total_kostnad_NOK"].sum()
+            'NOK total alternativ 1': df["total_kostnad_NOK"].sum(),
+            'Støtte': total_price - df["total_kostnad_NOK"].sum()
         })
 
     df_resultater = pd.DataFrame(resultater)
