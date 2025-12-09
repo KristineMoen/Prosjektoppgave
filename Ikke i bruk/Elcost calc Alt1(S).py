@@ -4,15 +4,15 @@ import pandas as pd
 # DETTE E FORDELING AV GRUNNSTØTTE
 data_demand = pd.read_csv('/Users/synnelefdal/Desktop/<3/5.klasse/demand.csv')
 
-data_price = pd.read_csv('prices.csv')
+data_price = pd.read_csv('../prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
 
 # ------------------------------------- FINNE AKTUELLE HUSSTANDER -------------------------------------------#
 
 # Finne ID:
-data_answer = pd.read_csv('answers.csv')
-data_households = pd.read_csv('households (1).csv')
+data_answer = pd.read_csv('../answers.csv')
+data_households = pd.read_csv('../households (1).csv')
 liste_husstander = []
 
 
