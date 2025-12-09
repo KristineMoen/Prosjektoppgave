@@ -59,13 +59,13 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
 
 
     for ID in liste_husstander:
-        rad_info = data_answer[data_answer['ID'] == ID].iloc[0]
+        '''rad_info = data_answer[data_answer['ID'] == ID].iloc[0]
         husholdning_type = rad_info['Q22']
         størrelse = rad_info['Q23']
         by = rad_info['Q_City']
         inntekt = rad_info['Q21']
         utdanning = rad_info['Q20']
-        #oppvarming = rad['']
+        #oppvarming = rad['']'''
 
         demand_ID = data_demand[data_demand['ID'] == ID]
         price_area = data_households[data_households['ID'] == ID].iloc[0]['Price_area']
@@ -115,11 +115,11 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
 
         resultater.append({
             'ID': ID,
-            'Husholdning': husholdning_type,          #Type husholdning
-            'Størrelse': størrelse,                   #Sørrelsen på husholdningen
-            'Utdanning': utdanning,                   #Utdanningen til de som bor der
-            'By': by,                                 #Hvilken by er husstanden i
-            'Inntekt': inntekt,                       #Inntekten til husstanden
+            #'Husholdning': husholdning_type,          #Type husholdning
+            #'Størrelse': størrelse,                   #Sørrelsen på husholdningen
+            #'Utdanning': utdanning,                   #Utdanningen til de som bor der
+            #'By': by,                                 #Hvilken by er husstanden i
+            #'Inntekt': inntekt,                       #Inntekten til husstanden
             'Total demand (kWh)': total_demand,         #Total demand i kWh
             'Tot pris u/ støtte (NOK)': total_price,        #Total strømpris uten noe støtte
             'Tot pris m/ støtte (NOK)': total_strømstøtte,     #Total strømpris med støtte
