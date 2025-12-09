@@ -19,7 +19,7 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [5]  and # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
+                rad["Q_City"] in [5]   # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
                 # rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
                 #rad["Q23"] in  [1,2,3]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 #rad["Q21"] in [1,2]         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
@@ -29,9 +29,9 @@ def finne_husstander():
                 # rad["Q29"] == 1        # 1 = Ja, 2 = Nei
                 # rad["Q8_12"] == 0      # 0 = Flyttet ikke elbilladning til andre timer, 1 = flyttet elbilladning til andre timer
                 # rad["Q7"] == 3         # 1 = Gjorde ofte tiltak, 2 = Gjorde av og til tiltak, 3 = Nei
-                rad["Q29"] == 1   and     # 1 = Har elbil, 2 = Har ikke elbil
+                #rad["Q29"] == 1   and     # 1 = Har elbil, 2 = Har ikke elbil
                 # rad["Q8_13"] == 1      # 0 = Installerte ikke elbillader, 1 = Installerte elbillader
-                rad["Q31"] in [2,3,4]        # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
+                #rad["Q31"] in [2,3,4]        # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
 
         ):
 
@@ -82,7 +82,13 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
 
         # Merge og beregninger
         merged = pd.merge(demand_filtered, price_filtered, on=['Date', 'Hour'])
-        merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']           #Regner ut hva strømmen hadde kostet uten strømstøtte og avgifter
+
+        #alt 1
+        D_gjennomsnitt = 13000  # kWh tatt fra average beregning
+        if total_demand > D_gjennomsnitt:
+            merged['Price'] = merged['Demand_kWh'] * merged['Price_NOK_kWh']           #Regner ut hva strømmen hadde kostet uten strømstøtte og avgifter
+
+
 
         merged['Price_strømstøtte'] = np.where(merged['Price_NOK_kWh'] > 0.75,                             #Regner ut prisen på strømmen med dagens strømstøtte og uten avgifter
                                                merged['Demand_kWh'] * (merged['Price_NOK_kWh'] * 0.90),
@@ -95,13 +101,15 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
         total_strømstøtte = merged['Price_strømstøtte'].sum()
 
         #Regne ut og anta
-        P_akseptabelpris = 0.4 #NOK/kWh
-        E_egenandel_gjennomsnitt = P_akseptabelpris *  13674.261986  #dette e tatt fra kjøring av bare bergen household gjennomsnitt total demand
-        #E_egenandel = P_akseptabelpris * total_demand
-        #print('Utgift strøm',E_egenandel)
-        K =  14915.484740 #dette e og tatt fra bergen kjøring. tot pris uten støtte
-        støtte_p_pers= K - E_egenandel_gjennomsnitt
-        #print('Støtte p pers', støtte_p_pers)
+        D_gjennomsnitt= 13000 #kWh tatt fra average beregning
+        if total_demand>D_gjennomsnitt:
+            betale_fullpris_demand=total_demand-D_gjennomsnitt
+            fullpris=betale_fullpris_demand*price_data
+
+        else:
+            continue
+
+
 
 
 
@@ -128,8 +136,9 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
             'Diff i NOK mellom u/ støtte og m/ støtte': diff_u_støtte_og_m_støtte,                 #Differansen i uten støtte og med støtte
             'Diff i NOK mellom Norgespris og strømstøtte' : diff_norgespris_og_strømstøtte,         #Differansne i pris mellom norgespris og strømstøtte
             #'Type oppvarmin' : oppvarming
-            'Støtte alternativ 2' : støtte_p_pers,
-            'Strøm utgift alternativ 2' : total_price - støtte_p_pers
+            'Støtte alternativ 1' : 0,
+            'Strøm utgift alternativ 1' : 0
+
         })
         #pd.set_option("display.max_rows", None)
         #pd.set_option("display.max_columns", None)
