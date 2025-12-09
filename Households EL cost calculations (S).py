@@ -19,19 +19,11 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [5]  # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
-                # rad["Q22"] == 1            # 1 = Enebolig 4 = Boligblokk
+                rad["Q_City"] in [5]            # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum 5 = Bergen
                 #rad["Q23"] in  [1,2,3]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
-                #rad["Q21"] in [1,2]         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
-                # rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
-                # rad["Q1"] == 1          # 1 = Fulgte med på egen strømbruk, 2 = følgte ikke med
-                # rad['Q4'] == 4         # 1 = Fulgte med hver dag, 2 = Fulgte med noen ganger i uken, 3 = Fulgte med noen ganger i mnd, 4 = Fulgte med noen ganger i løpet av vinteren
-                # rad["Q29"] == 1        # 1 = Ja, 2 = Nei
-                # rad["Q8_12"] == 0      # 0 = Flyttet ikke elbilladning til andre timer, 1 = flyttet elbilladning til andre timer
-                # rad["Q7"] == 3         # 1 = Gjorde ofte tiltak, 2 = Gjorde av og til tiltak, 3 = Nei
-                # rad["Q29"] == 1   and     # 1 = Har elbil, 2 = Har ikke elbil
-                # rad["Q8_13"] == 1      # 0 = Installerte ikke elbillader, 1 = Installerte elbillader
-                #rad["Q31"] in [2,3,4]        # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
+                #rad["Q21"] in [1,2]            # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
+                #rad["Q29"] == 1               # 1 = Har elbil, 2 = Har ikke elbil
+                #rad["Q31"] in [2,3,4]          # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
 
         ):
 
@@ -102,38 +94,35 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
 
         resultater.append({
             'ID': ID,
-            'Husholdning': husholdning_type,          #Type husholdning
-            'Størrelse': størrelse,                   #Sørrelsen på husholdningen
-            'Utdanning': utdanning,                   #Utdanningen til de som bor der
-            'By': by,                                 #Hvilken by er husstanden i
-            'Inntekt': inntekt,                       #Inntekten til husstanden
-            'Total demand (kWh)': total_demand,         #Total demand i kWh
-            'Tot pris u/ støtte (NOK)': total_price,        #Total strømpris uten noe støtte
-            'Tot pris m/ støtte (NOK)': total_strømstøtte,     #Total strømpris med støtte
-            'Tot pris m/ Norgespris (NOK)': total_norgespris,    #Total pris med Norgespris som strømstøtte
+            'Husholdning': husholdning_type,                                                       #Type husholdning
+            'Størrelse': størrelse,                                                                #Sørrelsen på husholdningen
+            'Utdanning': utdanning,                                                                #Utdanningen til de som bor der
+            'By': by,                                                                              #Hvilken by er husstanden i
+            'Inntekt': inntekt,                                                                    #Inntekten til husstanden
+            'Total demand (kWh)': total_demand,                                                    #Total demand i kWh
+            'Tot pris u/ støtte (NOK)': total_price,                                               #Total strømpris uten noe støtte
+            'Tot pris m/ støtte (NOK)': total_strømstøtte,                                         #Total strømpris med støtte
+            'Tot pris m/ Norgespris (NOK)': total_norgespris,                                      #Total pris med Norgespris som strømstøtte
             'Diff i NOK mellom Norgespris og ingen strømstøtte': diff_norgespris_og_ingen,         #Differansne mellom pris uten støtte og Norgespris
             'Diff i NOK mellom u/ støtte og m/ støtte': diff_u_støtte_og_m_støtte,                 #Differansen i uten støtte og med støtte
             'Diff i NOK mellom Norgespris og strømstøtte' : diff_norgespris_og_strømstøtte         #Differansne i pris mellom norgespris og strømstøtte
-            #'Type oppvarmin' : oppvarming
+
         })
-        #pd.set_option("display.max_rows", None)
-        #pd.set_option("display.max_columns", None)
-        #pd.set_option("display.width", 1000)
-        #pd.set_option("display.float_format", "{:.2f}".format)
+
 
     df = pd.DataFrame(resultater)
 
-    # Print hele tabellen
+    # ------- Printer hele tabellen -----
     print(df)
 
-    # Print gjennomsnitt av alle numeriske kolonner
+    # ------ Printer gjennomsnitt av alle numeriske kolonner -----
     print("\nGjennomsnitt for alle husstander:")
     print(df.mean(numeric_only=True))
 
     return df
 
 
-    #return pd.DataFrame(resultater)
+
 
 
 

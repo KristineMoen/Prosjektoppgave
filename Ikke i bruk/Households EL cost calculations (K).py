@@ -4,19 +4,19 @@ import pandas as pd
 
 data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
 
-data_price = pd.read_csv('prices.csv')
+data_price = pd.read_csv('../prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
 
-Blindern_Temperatur_dag = pd.read_csv('Blindern_Temperatur_dag.csv')
-Blindern_Temp_t4t = pd.read_csv('Blindern_temperatur_t4t.csv')
+Blindern_Temperatur_dag = pd.read_csv('../Blindern_Temperatur_dag.csv')
+Blindern_Temp_t4t = pd.read_csv('../Blindern_temperatur_t4t.csv')
 
 
 # ------------------------------------- FINNE AKTUELLE HUSSTANDER -------------------------------------------#
 
 # Finne ID:
-data_answer = pd.read_csv('answers.csv')
-data_households = pd.read_csv('households (1).csv')
+data_answer = pd.read_csv('../answers.csv')
+data_households = pd.read_csv('../households (1).csv')
 liste_husstander = []
 
 
@@ -24,17 +24,10 @@ def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
                 rad["Q_City"] in [4, 1, 2] and  # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
-                # rad["Q22"] == 4            # 1 = Enebolig 4 = Boligblokk
                 # rad["Q23"] == 9         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
                 rad["Q21"] in [5,6]          # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
-                # rad["Q20"] == 4         # 1 = Ingen fullført utdanning, 2 = Grunnskole, 3 = Vgs, 4 = Høyskole/Uni lavere grad, 5 = Høyskol/Uni høyere grad
-                # rad["Q1"] == 1          # 1 = Fulgte med på egen strømbruk, 2 = følgte ikke med
-                # rad['Q4'] == 4
                 # rad["Q29"] == 1        # 1 = Ja, 2 = Nei
-                # rad["Q8_12"] == 0
-                # rad["Q7"] == 3
-                # rad["Q29"] == 2
-                # rad["Q8_13"] == 1
+
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
@@ -106,19 +99,19 @@ def sammenlikning_av_husholdninger(data_answer, data_households, data_demand, da
 
         resultater.append({
             'ID': ID,
-            'Husholdning': husholdning_type,          #Type husholdning
-            'Størrelse': størrelse,                   #Sørrelsen på husholdningen
-            'Utdanning': utdanning,                   #Utdanningen til de som bor der
-            'By': by,                                 #Hvilken by er husstanden i
-            'Inntekt': inntekt,                       #Inntekten til husstanden
-            'Total demand (kWh)': total_demand,         #Total demand i kWh
-            'Tot pris u/ støtte (NOK)': total_price,        #Total strømpris uten noe støtte
-            'Tot pris m/ støtte (NOK)': total_strømstøtte,     #Total strømpris med støtte
-            'Tot pris m/ Norgespris (NOK)': total_norgespris,    #Total pris med Norgespris som strømstøtte
+            'Husholdning': husholdning_type,                                                       #Type husholdning
+            'Størrelse': størrelse,                                                                #Sørrelsen på husholdningen
+            'Utdanning': utdanning,                                                                #Utdanningen til de som bor der
+            'By': by,                                                                              #Hvilken by er husstanden i
+            'Inntekt': inntekt,                                                                    #Inntekten til husstanden
+            'Total demand (kWh)': total_demand,                                                    #Total demand i kWh
+            'Tot pris u/ støtte (NOK)': total_price,                                               #Total strømpris uten noe støtte
+            'Tot pris m/ støtte (NOK)': total_strømstøtte,                                         #Total strømpris med støtte
+            'Tot pris m/ Norgespris (NOK)': total_norgespris,                                      #Total pris med Norgespris som strømstøtte
             'Diff i NOK mellom Norgespris og ingen strømstøtte': diff_norgespris_og_ingen,         #Differansne mellom pris uten støtte og Norgespris
             'Diff i NOK mellom u/ støtte og m/ støtte': diff_u_støtte_og_m_støtte,                 #Differansen i uten støtte og med støtte
             'Diff i NOK mellom Norgespris og strømstøtte' : diff_norgespris_og_strømstøtte         #Differansne i pris mellom norgespris og strømstøtte
-            #'Type oppvarmin' : oppvarming
+
         })
 
         df = pd.DataFrame(resultater)
