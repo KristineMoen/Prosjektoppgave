@@ -12,29 +12,28 @@ from pandas import to_datetime
 
 # -------------------------------------- LESER DATA --------------------------------------#
 
-data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgave_CSV_filer/demand.csv')
+data_demand = pd.read_csv('/Users/synnelefdal/Desktop/<3/5.klasse/demand.csv')
 
 data_price = pd.read_csv('prices.csv')
-data_price_update = data_price.drop(columns=['Price_NOK_MWh'])
+data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
-Bergen_Temp_t4t = pd.read_csv('Bergen_temp_t4t.csv')
+Blindern_Temp_t4t = pd.read_csv('Blindern_temperatur_t4t.csv')
 
-# ------------------------------------- FINNE AKTUELLE HUSSTANDER -------------------------------------------#
+#------------------------------------- FINNE AKTUELLE HUSSTANDER -------------------------------------------#
 
-# Finne ID:
+#Finne ID:
 data_answer = pd.read_csv('answers.csv')
 data_households = pd.read_csv('households (1).csv')
 liste_husstander = []
 
-
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [4, 1, 2]  # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum, 5 = Bergen
-                # rad["Q23"] == 9         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
-                # rad["Q21"] == 6         # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
-                # rad["Q29"] == 2         # 1 = Har elbil, 2 = Har ikke elbil
-                # rad["Q31"] == 1         # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
+                rad["Q_City"] in [4, 1, 2]     # 4 = Oslo, 2 = Lillestrøm, 1 = Bærum
+                #rad["Q23"] in [1,2,3]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
+                #rad["Q21"] in [1,2]           # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
+                #rad["Q29"] == 1  and          # 1 = Har elbil, 2 = Har ikke elbil
+                #rad["Q31"] in [2,3,4]         # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
         ):
 
             # Sjekk om ID finnes i data_households og har Demand_data = 'Yes'
@@ -48,11 +47,10 @@ def finne_husstander():
 
     print("ID-er som oppfyller kravene:", len(liste_husstander))
 
-
 finne_husstander()
 
 
-def price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Bergen_Temp_t4t):
+def price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
     # Definer perioder
     ref_start = '2019-07-01'  # Start for referanseperiode
     start_dato = '2021-09-01'
@@ -79,13 +77,13 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     price_filtered['Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(lambda x: x if x > 0 else 0.01)
 
     # ------------ Temperatur --------------------- #
-    Bergen_Temp_t4t['Date'] = pd.to_datetime(Bergen_Temp_t4t['Date'])
-    Bergen_Temp_t4t['Hour'] = Bergen_Temp_t4t['Hour'].astype(int)
-    Bergen_Temp_t4t['Temperatur24'] = Bergen_Temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
-    Bergen_Temp_t4t['Temperatur72'] = Bergen_Temp_t4t['Temperatur'].rolling(window=72, min_periods=1).mean()
+    Blindern_Temp_t4t['Date'] = pd.to_datetime(Blindern_Temp_t4t['Date'])
+    Blindern_Temp_t4t['Hour'] = Blindern_Temp_t4t['Hour'].astype(int)
+    Blindern_Temp_t4t['Temperatur24'] = Blindern_Temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
+    Blindern_Temp_t4t['Temperatur72'] = Blindern_Temp_t4t['Temperatur'].rolling(window=72, min_periods=1).mean()
 
-    temp_filtered = Bergen_Temp_t4t[(Bergen_Temp_t4t['Date'] >= ref_start) &
-                                      (Bergen_Temp_t4t['Date'] <= end_dato)]
+    temp_filtered = Blindern_Temp_t4t[(Blindern_Temp_t4t['Date'] >= ref_start) &
+                                      (Blindern_Temp_t4t['Date'] <= end_dato)]
 
     # ------------------- Merge data ---------------- #
     merged_1 = pd.merge(total_hour_demand, price_filtered, on=['Date', 'Hour'])
@@ -102,29 +100,42 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     df['Month'] = df['Date'].dt.strftime('%B')
 
     df['Hour'] = pd.Categorical(df['Hour'].astype(str),
-                                categories=[str(i) for i in range(1, 25)], ordered=True)
+        categories=[str(i) for i in range(1, 25)], ordered=True)
     df['Month'] = pd.Categorical(df['Month'],
-                                 categories=['January', 'February', 'March', 'April', 'May', 'June',
-                                             'July', 'August', 'September', 'October', 'November', 'December'],
-                                 ordered=True)
+        categories=['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'],
+        ordered=True)
 
-    df['Price_Group'] = np.where(df['Date'] < pd.to_datetime(start_dato), 'Before_ref', pd.cut(df['Price_NOK_kWh'],
-                                                                                               bins=[0, 0.12, 0.55,
-                                                                                                     1.77, 6.54],
-                                                                                               labels=['Low', 'Medium',
-                                                                                                       'High',
-                                                                                                       'Very High'],
-                                                                                               include_lowest=True)
-                                 )
+    # ----------- FOR 1C MED TIMES ENDRINGER OG PRISGRUPPER -------
+    '''df['Price_Group'] = np.where(df['Date'] < pd.to_datetime(start_dato), 'Before_ref', pd.cut(df['Price_NOK_kWh'],
+               bins=[0, 0.12, 0.55, 1.77, 6.54],
+               labels=['Low', 'Medium', 'High', 'Very High'],
+               include_lowest=True)
+    )
+
+    #df['Price_Group'] = pd.Categorical(df['Price_Group'],
+                                       categories=['Before_ref', 'Low', 'Medium', 'High', 'Very High'],
+                                       ordered = True)
+
+    print(df['Price_Group'].value_counts())'''
+    # ----------- 1C til hit -------------
+    # -------- FOR 1B HEILT VANLIG GJENNOMSNITT --------
+
+    df['Price_Group'] = np.where(
+        df['Date'] < pd.to_datetime(start_dato),
+        'Before_ref',
+        'After_ref'
+    )
 
     df['Price_Group'] = pd.Categorical(df['Price_Group'],
-                                       categories=['Before_ref', 'Low', 'Medium', 'High', 'Very High'],
+                                       categories=['Before_ref', 'After_ref'],
                                        ordered=True)
 
     print(df['Price_Group'].value_counts())
+    #------------1b til hit ----------
 
     # --- Regresjons analyse ---
-    y, X = patsy.dmatrices('np.log(Demand_kWh) ~ C(Price_Group, Treatment(reference="Before_ref")) + Temperatur24 + '
+    y, X = patsy.dmatrices('np.log(Demand_kWh) ~ C(Price_Group, Treatment(reference= "Before_ref" )) + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference="September"))',
                            data=df, return_type='dataframe', NA_action='drop')
@@ -207,7 +218,108 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     plt.grid(True)
     plt.show()
 
+    # ----------- PLOT AV SPOT PRISER OVER HELE TIDSROMMET ----------------- #
+    plt.figure(figsize=(16, 6))
+    plt.plot(price_data['Date'] + pd.to_timedelta(price_data['Hour'] - 1, unit='h'),
+             price_data['Price_NOK_kWh'], color='blue', linewidth=1)
+    plt.xlabel('Dato')
+    plt.ylabel('Spotpris (NOK/kWh)')
+    plt.title('Spotpriser over hele tilgjengelige tidsrommet')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Definer datoer som skal markeres
+    ref_start = pd.to_datetime('2019-07-01')
+    start_dato = pd.to_datetime('2021-09-01')
+    end_dato = pd.to_datetime('2022-03-31')
+
+    # ----------- PLOT AV SPOT PRISER MED VERTIKALE LINJER ----------------- #
+    plt.figure(figsize=(16, 6))
+    plt.plot(price_data['Date'] + pd.to_timedelta(price_data['Hour'] - 1, unit='h'),
+             price_data['Price_NOK_kWh'], color='blue', linewidth=1, label='Spot price')
+
+    # Legg til vertikale linjer
+    plt.axvline(ref_start, color='orange', linestyle='--', linewidth=1.5, label='ref_start')
+    plt.axvline(start_dato, color='green', linestyle='--', linewidth=1.5, label='start_date')
+    plt.axvline(end_dato, color='red', linestyle='--', linewidth=1.5, label='end_date')
+
+    plt.xlabel('Date')
+    plt.ylabel('Spot price (NOK/kWh)')
+    plt.title('Spot Price for Reference Period and Analysing Period')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # Definer datoer
+    ref_start = pd.to_datetime('2019-07-01')
+    start_dato = pd.to_datetime('2021-09-01')
+    end_dato = pd.to_datetime('2022-03-31')
+
+    # Skravert område mellom start_dato og end_dato
+    plt.axvspan(start_dato, end_dato, color='blue', alpha=0.2, label='Analysing Period')
+
+    # Vertikale linjer
+    plt.axvline(ref_start, color='blue', linestyle='--', linewidth=1.5, label='Reference start')
+    plt.axvline(start_dato, color='green', linestyle='--', linewidth=1.5, label='Reference start of analysis')
+    plt.axvline(end_dato, color='red', linestyle='--', linewidth=1.5, label='End of analysis')
+
+    # Horisontale linjer kun mellom start_dato og end_dato
+    price_levels = [0.12, 0.55, 1.77, 6.54]
+    for level in price_levels:
+        plt.hlines(y=level, xmin=start_dato, xmax=end_dato, colors='red', linestyles='--', linewidth=1.5)
+
+    # Fjern duplikater i legend
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+
+    # Legend øverst til høyre
+    plt.legend(by_label.values(), by_label.keys(), loc='upper right')
+
+    plt.xlabel('Date')
+    plt.ylabel('Spot Price (NOK/kWh)')
+    plt.title('Spot Price with Horizontal Levels Only During Analysis Period')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # ----------- PLOT AV SPOT PRISER MED VERTIKALE LINJER OG SKRAVERT PERIODE ----------------- #
+    plt.figure(figsize=(16, 6))
+
+    # Plott spotpriser
+    plt.plot(price_data['Date'] + pd.to_timedelta(price_data['Hour'] - 1, unit='h'),
+             price_data['Price_NOK_kWh'], color='blue', linewidth=1, label='Spot Price')
+
+    # Skravert område mellom start_dato og end_dato
+    plt.axvspan(start_dato, end_dato, color='blue', alpha=0.2, label='Analysing Period')
+
+    # Vertikale linjer
+    plt.axvline(ref_start, color='blue', linestyle='--', linewidth=1.5, label='Reference start')
+    plt.axvline(start_dato, color='blue', linestyle='--', linewidth=1.5, label='Reference end')
+    #plt.axvline(end_dato, color='red', linestyle='--', linewidth=1.5, label='end_dato')
+
+    price_levels = [0.12, 0.55, 1.77,6.54]
+
+    # Horisontale linjer
+    for level in price_levels:
+        plt.hlines(y=level, xmin=start_dato, xmax=end_dato, colors='red', linestyles='--', linewidth=1.5)
+
+    # For å unngå duplikat i legend når flere horisontale linjer
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc='upper right')
+
+    plt.xlabel('Date')
+    plt.ylabel('Spot Price (NOK/kWh)')
+    plt.title('Spot Price for Reference Period and Analysing Period')
+    plt.grid(True)
+    #plt.legend()
+    plt.tight_layout()
+    plt.show()
+
     # ------ Plott over gjennomsnittet forbruk over de ulike timene i døgnet ------------ #
+
 
     avg_hour_demand = total_hour_demand.groupby('Hour')['Demand_kWh'].mean()
     intercept = model.params['Intercept']
@@ -233,15 +345,6 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     plt.legend()
     plt.show()
 
-    # -------- Printe sammenlignbare versjoner av lineær ----------
-    print('Low', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Low]'] / len(liste_husstander))
 
-    print('Medium', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Medium]'] / len(liste_husstander))
+print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t))
 
-    print('High', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.High]'] / len(liste_husstander))
-
-    print('Very High',
-          model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Very High]'] / len(liste_husstander))
-
-
-print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Bergen_Temp_t4t))

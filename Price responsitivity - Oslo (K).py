@@ -230,5 +230,15 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     plt.legend()
     plt.show()
 
+    # -------- Printe sammenlignbare versjoner av lineær ----------
+    print('Low', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Low]'] / len(liste_husstander))
+
+    print('Medium', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Medium]'] / len(liste_husstander))
+
+    print('High', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.High]'] / len(liste_husstander))
+
+    print('Very High',
+          model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Very High]'] / len(liste_husstander))
+
 
 print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t))

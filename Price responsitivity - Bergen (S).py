@@ -208,6 +208,28 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     plt.grid(True)
     plt.show()
 
+    # ----------- PLOT AV SPOT PRISER OVER TID ----------------- #
+    plt.figure(figsize=(14, 6))
+    plt.plot(price_filtered['Date'] + pd.to_timedelta(price_filtered['Hour'] - 1, unit='h'),
+             price_filtered['Price_NOK_kWh'], color='blue', linewidth=1)
+    plt.xlabel('Dato')
+    plt.ylabel('Spotpris (NOK/kWh)')
+    plt.title('Spotpriser fra {} til {}'.format(ref_start, end_dato))
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # ----------- PLOT AV SPOT PRISER OVER HELE TIDSROMMET ----------------- #
+    plt.figure(figsize=(16, 6))
+    plt.plot(price_data['Date'] + pd.to_timedelta(price_data['Hour'] - 1, unit='h'),
+             price_data['Price_NOK_kWh'], color='orange', linewidth=1)
+    plt.xlabel('Dato')
+    plt.ylabel('Spotpris (NOK/kWh)')
+    plt.title('Spotpriser over hele tilgjengelige tidsrommet')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
     # ------ Plott over gjennomsnittet forbruk over de ulike timene i døgnet ------------ #
 
     avg_hour_demand = total_hour_demand.groupby('Hour')['Demand_kWh'].mean()
@@ -233,6 +255,16 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     plt.grid(True)
     plt.legend()
     plt.show()
+
+    # -------- Printe sammenlignbare versjoner av lineær ----------
+    print('Low', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Low]'] / len(liste_husstander))
+
+    print('Medium', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Medium]'] / len(liste_husstander))
+
+    print('High', model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.High]'] / len(liste_husstander))
+
+    print('Very High',
+          model.params['C(Price_Group, Treatment(reference="Before_ref"))[T.Very High]'] / len(liste_husstander))
 
 
 print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Bergen_Temp_t4t))
