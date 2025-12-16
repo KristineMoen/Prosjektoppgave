@@ -17,7 +17,7 @@ data_demand = pd.read_csv('/Users/kristinemoen/Documents/5-klasse/Prosjektoppgav
 data_price = pd.read_csv('prices.csv')
 data_price_update = data_price.drop(columns = ['Price_NOK_MWh'])
 
-Blindern_Temp_t4t = pd.read_csv('Blindern_temperatur_t4t.csv')
+Bergen_Temp_t4t = pd.read_csv('Bergen_temp_t4t.csv')
 
 #------------------------------------- FINNE AKTUELLE HUSSTANDER -------------------------------------------#
 
@@ -29,10 +29,10 @@ liste_husstander = []
 def finne_husstander():
     for index, rad in data_answer.iterrows():
         if (
-                rad["Q_City"] in [5] and    # 5 = Bergen
-                rad["Q23"] in [8,9]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
-                #rad["Q21"] in [1,2]           # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
-                #rad["Q29"] == 1  and      # 1 = Har elbil, 2 = Har ikke elbil
+                rad["Q_City"] in [5]     # 5 = Bergen
+                #rad["Q23"] in [8,9]         # 1= Under 30 kvm, 2 = 30-49 kvm, 3 = 50-59 kvm, 4 = 60-79 kvm, 5 = 80-99 kvm, 6 = 100-119 kvm, 7 = 120-159 kvm, 8 = 160-199 kvm, 9 = 200 kvm eller større, 10 = vet ikke
+                #rad["Q21"] in [5,6]           # 1 = Under 300 000 kr, 2 = 300 000 - 499 999, 3 = 500 000 -799 999, 4 = 800 000 - 999 999, 5 = 1 000 000 - 1 499 999, 6 = 1 500 000 eller mer, 7 = Vil ikke oppgi, 8 = Vet ikke
+                #rad["Q29"] == 1        # 1 = Har elbil, 2 = Har ikke elbil
                 #rad["Q31"] in [2,3,4]         # 1 = Styrer ikke ladning av elbil for å unngå timer med høye priser, 2 = Ja, manuelt, 3 = Ja, automatisk etter tidspunkt, 4 = Ja, automatisk etter timepris
         ):
 
@@ -50,7 +50,7 @@ def finne_husstander():
 finne_husstander()
 
 
-def price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t):
+def price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Bergen_Temp_t4t):
     # Definer perioder
     ref_start = '2019-07-01'  # Start for referanseperiode
     start_dato = '2021-09-01'
@@ -77,13 +77,13 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     price_filtered['Price_NOK_kWh'] = price_filtered['Price_NOK_kWh'].apply(lambda x: x if x > 0 else 0.01)
 
     # ------------ Temperatur --------------------- #
-    Blindern_Temp_t4t['Date'] = pd.to_datetime(Blindern_Temp_t4t['Date'])
-    Blindern_Temp_t4t['Hour'] = Blindern_Temp_t4t['Hour'].astype(int)
-    Blindern_Temp_t4t['Temperatur24'] = Blindern_Temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
-    Blindern_Temp_t4t['Temperatur72'] = Blindern_Temp_t4t['Temperatur'].rolling(window=72, min_periods=1).mean()
+    Bergen_Temp_t4t['Date'] = pd.to_datetime(Bergen_Temp_t4t['Date'])
+    Bergen_Temp_t4t['Hour'] = Bergen_Temp_t4t['Hour'].astype(int)
+    Bergen_Temp_t4t['Temperatur24'] = Bergen_Temp_t4t['Temperatur'].rolling(window=24, min_periods=1).mean()
+    Bergen_Temp_t4t['Temperatur72'] = Bergen_Temp_t4t['Temperatur'].rolling(window=72, min_periods=1).mean()
 
-    temp_filtered = Blindern_Temp_t4t[(Blindern_Temp_t4t['Date'] >= ref_start) &
-                                      (Blindern_Temp_t4t['Date'] <= end_dato)]
+    temp_filtered = Bergen_Temp_t4t[(Bergen_Temp_t4t['Date'] >= ref_start) &
+                                      (Bergen_Temp_t4t['Date'] <= end_dato)]
 
     # ------------------- Merge data ---------------- #
     merged_1 = pd.merge(total_hour_demand, price_filtered, on=['Date', 'Hour'])
@@ -122,7 +122,7 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
     # ------------1b til hit ----------
 
     # --- Regresjons analyse ---
-    y, X = patsy.dmatrices('Demand_kWh ~ C(Price_Group, Treatment(reference= "Before_ref" )) + Temperatur24 + '
+    y, X = patsy.dmatrices('np.log(Demand_kWh) ~ C(Price_Group, Treatment(reference= "Before_ref" )) + Temperatur24 + '
                            'I(Temperatur24**2) + I(Temperatur24**3) + Temperatur72 + '
                            'C(Hour, Treatment(reference="1")) + C(Month, Treatment(reference="September"))',
                            data=df, return_type='dataframe', NA_action='drop')
@@ -292,4 +292,4 @@ def price_responsitivity(liste_husstander, data_demand, data_price_update, data_
 
 
 
-print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Blindern_Temp_t4t))
+print(price_responsitivity(liste_husstander, data_demand, data_price_update, data_households, Bergen_Temp_t4t))
